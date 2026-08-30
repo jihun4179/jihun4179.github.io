@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>개인정보 처리방침</title>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --ink: #16233d;
+    --ink-soft: #55607a;
+    --line: #dfe3ec;
+    --accent: #2a6df4;
+    --accent-soft: #eaf1ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1420;
+      --card: #171d2c;
+      --ink: #e7ecf7;
+      --ink-soft: #a2acc2;
+      --line: #2a3244;
+      --accent: #6ea8ff;
+      --accent-soft: #1c2740;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    line-height: 1.75;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 72px; }
+  header { padding: 8px 0 24px; border-bottom: 1px solid var(--line); margin-bottom: 28px; }
+  h1 { font-size: 1.6rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .dev { color: var(--ink-soft); font-size: 0.95rem; margin: 0; }
+  h2 { font-size: 1.2rem; margin: 34px 0 10px; letter-spacing: -0.01em; }
+  h3 { font-size: 1.02rem; margin: 22px 0 6px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin: 16px 0;
+  }
+  a { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--ink-soft); font-weight: 600; width: 30%; }
+  .en { color: var(--ink-soft); font-size: 0.92rem; }
+  footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 0.88rem; }
+  .table-scroll { overflow-x: auto; }
+  .nav { margin: 4px 0 0; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>개인정보 처리방침</h1>
+  <p class="dev">개발자 연락처 · jihun5968@naver.com</p>
+  <p class="nav"><a href="../">← 계정 및 데이터 삭제 요청 안내로</a></p>
+</header>
+
+<p>
+  이 처리방침은 아래 앱들에 적용됩니다. 두 앱은 같은 서버 구조와 같은 방식으로 정보를 다룹니다.
+</p>
+
+<div class="card">
+  <ul>
+    <li><strong>업넘버 (UP NUMBER)</strong> — com.jihun.upnumber</li>
+    <li><strong>소환 합성 디펜스 (Summon Merge Defense)</strong> — com.jihun.summonmergedefense</li>
+  </ul>
+</div>
+
+<h2>1. 수집하는 정보</h2>
+<p>회원가입 시 <strong>닉네임만</strong> 입력받습니다. 비밀번호·이메일·전화번호·주소는 요구하지 않으며, 구글 로그인 등 소셜 로그인(OAuth)도 사용하지 않습니다.</p>
+<div class="table-scroll">
+<table>
+  <tr><th>이름 (닉네임)</th><td>게임 안에서 나를 나타내는 이름. 랭킹·전적 화면에 표시됩니다.</td></tr>
+  <tr><th>사용자 ID</th><td>서버가 계정마다 자동으로 발급하는 내부 식별자와 인증 토큰. 기기에만 저장되며 화면에 노출되지 않습니다.</td></tr>
+  <tr><th>게임 전적</th><td>플레이 횟수, 승리 횟수, 최고 점수(또는 레이팅·최고 웨이브 등) — 랭킹 기능을 위해 서버에 저장됩니다.</td></tr>
+</table>
+</div>
+<p>
+  위 항목 외의 개인정보(위치, 연락처, 사진·동영상, 건강 정보, 금융 정보 등)는 <strong>수집하지 않습니다.</strong>
+  광고 SDK, 방문자 분석(애널리틱스) SDK, 크래시 리포트 SDK도 사용하지 않습니다.
+</p>
+
+<h2>2. 수집 목적</h2>
+<ul>
+  <li><strong>앱 기능 제공</strong> — 닉네임 표시, 랭킹·전적 조회</li>
+  <li><strong>계정 관리</strong> — 계정 생성, 로그인(토큰 확인), 중복 닉네임 방지</li>
+</ul>
+<p>수집한 정보를 광고, 마케팅, 프로필 분석, 제3자 판매·제공 목적으로 사용하지 않습니다.</p>
+
+<h2>3. 데이터 보관 및 제3자 제공</h2>
+<ul>
+  <li>수집한 정보는 <strong>개발자가 직접 운영하는 서버</strong>에만 저장됩니다. 외부 회사와 공유하거나 판매하지 않습니다.</li>
+  <li>서버를 실행하는 데 클라우드 호스팅 업체(서버 컴퓨터 임대)를 이용할 수 있으나, 이 업체는 데이터를 자체 목적으로 사용하지 않는 단순 인프라 제공자입니다.</li>
+  <li>서비스 운영 과정에서 접속 시각, IP 주소 등 표준적인 기술 로그가 서버에 일시적으로 남을 수 있습니다. 이는 오류 확인·부정 이용 방지 목적에 한해 사용되며 별도로 분석되거나 제3자에게 제공되지 않습니다.</li>
+  <li>법령에 따라 요구되는 경우를 제외하고 이용자의 동의 없이 정보를 외부에 제공하지 않습니다.</li>
+</ul>
+
+<h2>4. 보관 기간 및 삭제</h2>
+<p>
+  계정 정보는 <strong>이용자가 삭제를 요청하기 전까지</strong> 보관됩니다.
+  삭제 요청 방법과 삭제되는 항목은
+  <a href="../">계정 및 데이터 삭제 요청 안내</a> 페이지에 자세히 안내되어 있습니다.
+  요청 접수 후 최대 30일 이내에 처리되며, 처리 즉시 서버에서 완전히 삭제되고 별도의 백업을 남기지 않습니다.
+</p>
+
+<h2>5. 아동의 개인정보</h2>
+<p>
+  이 앱들은 특정 연령층을 대상으로 광고하지 않으며, 닉네임 외의 개인정보를 요구하지 않습니다.
+  만 14세 미만 아동의 경우 보호자의 지도 아래 이용하는 것을 권장합니다.
+  아동의 개인정보와 관련하여 우려되는 사항이 있으면 아래 연락처로 문의해 주세요.
+</p>
+
+<h2>6. 보안</h2>
+<p>서버와 앱 사이의 통신은 암호화된 연결(HTTPS/WSS)로 전송됩니다.</p>
+
+<h2>7. 처리방침 변경</h2>
+<p>이 방침이 바뀌면 이 페이지에 새 시행일자와 함께 업데이트합니다. 별도의 통지 채널(이메일 등)은 운영하지 않습니다.</p>
+
+<h2>8. 문의</h2>
+<p>개인정보 관련 문의나 삭제 요청은 아래로 연락해 주세요.</p>
+<p><a href="mailto:jihun5968@naver.com">jihun5968@naver.com</a></p>
+
+<hr style="border:0;border-top:1px solid var(--line);margin:40px 0 24px">
+
+<h2 class="en">Privacy Policy (English)</h2>
+<p class="en">
+  This policy applies to <strong>UP NUMBER</strong> (com.jihun.upnumber) and
+  <strong>Summon Merge Defense</strong> (com.jihun.summonmergedefense).
+</p>
+<p class="en">
+  <strong>What we collect:</strong> a nickname you choose, and a server-issued account ID / auth token.
+  We do not require a password, email address, or phone number, and we do not use OAuth sign-in.
+  We also collect basic match records (plays, wins, best score / rating, best wave) for the ranking feature.
+  We do not use any advertising, analytics, or crash-reporting SDKs.
+</p>
+<p class="en">
+  <strong>Why:</strong> to provide core app features (displaying your nickname, rankings) and to manage your account.
+  We never sell or share this data with third parties for their own purposes.
+</p>
+<p class="en">
+  <strong>Storage:</strong> data is stored only on our own server. Standard technical logs (e.g. IP address,
+  timestamp) may be kept briefly by our hosting infrastructure for operational and abuse-prevention purposes only.
+</p>
+<p class="en">
+  <strong>Retention &amp; deletion:</strong> data is kept until you request deletion — see the
+  <a href="../">Account &amp; Data Deletion page</a>. Requests are processed within 30 days.
+</p>
+<p class="en">
+  <strong>Contact:</strong> <a href="mailto:jihun5968@naver.com">jihun5968@naver.com</a>
+</p>
+
+<footer>
+  개발자 연락처: jihun5968@naver.com<br>
+  시행일자: 2026년 8월 30일
+</footer>
+
+</div>
+</body>
+</html>
