@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>앱 지원 · 계정 및 데이터 삭제 요청</title>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --ink: #16233d;
+    --ink-soft: #55607a;
+    --line: #dfe3ec;
+    --accent: #2a6df4;
+    --accent-soft: #eaf1ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1420;
+      --card: #171d2c;
+      --ink: #e7ecf7;
+      --ink-soft: #a2acc2;
+      --line: #2a3244;
+      --accent: #6ea8ff;
+      --accent-soft: #1c2740;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    line-height: 1.75;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 72px; }
+  header { padding: 8px 0 24px; border-bottom: 1px solid var(--line); margin-bottom: 28px; }
+  h1 { font-size: 1.6rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .dev { color: var(--ink-soft); font-size: 0.95rem; margin: 0; }
+  h2 { font-size: 1.2rem; margin: 34px 0 10px; letter-spacing: -0.01em; }
+  h3 { font-size: 1.02rem; margin: 22px 0 6px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin: 16px 0;
+  }
+  .steps { counter-reset: s; list-style: none; padding-left: 0; }
+  .steps li {
+    counter-increment: s;
+    position: relative;
+    padding-left: 40px;
+    margin: 14px 0;
+  }
+  .steps li::before {
+    content: counter(s);
+    position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  a { color: var(--accent); }
+  .mail {
+    display: inline-block;
+    background: var(--accent-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--ink-soft); font-weight: 600; width: 34%; }
+  .en { color: var(--ink-soft); font-size: 0.92rem; }
+  footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 0.88rem; }
+  .table-scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>계정 및 데이터 삭제 요청</h1>
+  <p class="dev">개발자 연락처 · jihun5968@naver.com</p>
+</header>
+
+<p>
+  이 페이지는 아래 앱들의 <strong>계정 삭제 및 데이터 삭제 요청</strong> 방법을 안내합니다.
+  아래 앱들은 모두 같은 방식으로 계정을 만들고 같은 절차로 삭제합니다.
+</p>
+
+<div class="card">
+  <ul>
+    <li><strong>업넘버 (UP NUMBER)</strong> — com.jihun.upnumber</li>
+    <li><strong>소환 합성 디펜스 (Summon Merge Defense)</strong> — com.jihun.summonmergedefense</li>
+  </ul>
+</div>
+
+<h2>계정은 어떻게 만들어지나요</h2>
+<p>
+  앱을 처음 켤 때 <strong>닉네임만</strong> 입력하면 서버가 계정을 발급합니다.
+  비밀번호·이메일·전화번호를 요구하지 않으며, 구글 로그인 등 소셜 로그인(OAuth)도 사용하지 않습니다.
+  발급된 인증 토큰은 기기 안에만 저장됩니다.
+</p>
+
+<h2>삭제를 요청하는 방법</h2>
+<ol class="steps">
+  <li>
+    아래 주소로 이메일을 보냅니다.<br>
+    <a class="mail" href="mailto:jihun5968@naver.com?subject=%EA%B3%84%EC%A0%95%20%EC%82%AD%EC%A0%9C%20%EC%9A%94%EC%B2%AD">jihun5968@naver.com</a>
+  </li>
+  <li>제목에 <strong>“계정 삭제 요청”</strong>이라고 적습니다.</li>
+  <li>
+    본문에 <strong>앱 이름</strong>(업넘버 / 소환 합성 디펜스)과
+    <strong>게임에서 쓰는 닉네임</strong>을 적습니다.
+    닉네임은 계정을 찾기 위한 유일한 정보이므로 정확히 적어 주세요.
+  </li>
+  <li>접수 후 처리 결과를 회신드립니다.</li>
+</ol>
+
+<h2>삭제되는 데이터</h2>
+<p>요청이 접수되면 서버에 저장된 아래 항목이 <strong>모두 영구 삭제</strong>됩니다.</p>
+
+<h3>업넘버 (UP NUMBER)</h3>
+<div class="table-scroll">
+<table>
+  <tr><th>계정 식별자 · 인증 토큰</th><td>서버가 발급한 내부 ID와 토큰</td></tr>
+  <tr><th>닉네임</th><td>게임에서 표시되는 이름</td></tr>
+  <tr><th>전적</th><td>플레이 횟수, 승리 횟수, 최고 점수</td></tr>
+  <tr><th>가입 시각</th><td>계정이 만들어진 날짜와 시간</td></tr>
+</table>
+</div>
+
+<h3>소환 합성 디펜스 (Summon Merge Defense)</h3>
+<div class="table-scroll">
+<table>
+  <tr><th>계정 식별자 · 인증 토큰</th><td>서버가 발급한 내부 ID와 토큰</td></tr>
+  <tr><th>닉네임</th><td>게임에서 표시되는 이름</td></tr>
+  <tr><th>전적</th><td>레이팅, 플레이 횟수, 승리 횟수, 최고 웨이브, 순위 합계</td></tr>
+  <tr><th>가입 시각</th><td>계정이 만들어진 날짜와 시간</td></tr>
+</table>
+</div>
+
+<h2>보관 기간</h2>
+<ul>
+  <li>삭제 요청은 접수 후 <strong>최대 30일 이내</strong>에 처리되며, 처리 시점에 위 데이터는 서버에서 완전히 지워집니다.</li>
+  <li>삭제 후에는 어떠한 형태로도 데이터를 보관하지 않습니다. 별도의 장기 백업본을 두지 않습니다.</li>
+  <li>기기 안에 저장된 진행 상황(설정, 기록 등)은 <strong>앱을 삭제하면 함께 지워집니다.</strong></li>
+</ul>
+
+<h2>참고</h2>
+<ul>
+  <li>계정을 유지한 채 일부 데이터만 삭제하는 기능은 제공하지 않습니다.</li>
+  <li>결제 정보는 Google Play가 처리하며, 이 앱들의 서버는 결제 정보를 저장하지 않습니다.</li>
+</ul>
+
+<hr style="border:0;border-top:1px solid var(--line);margin:40px 0 24px">
+
+<h2 class="en">Account &amp; Data Deletion (English)</h2>
+<p class="en">
+  This page explains how to request account and data deletion for
+  <strong>UP NUMBER</strong> (com.jihun.upnumber) and
+  <strong>Summon Merge Defense</strong> (com.jihun.summonmergedefense).
+</p>
+<p class="en">
+  Accounts are created with a nickname only — no password, email address, phone number, or OAuth sign-in is used.
+</p>
+<p class="en">
+  <strong>How to request deletion:</strong> send an email to
+  <a href="mailto:jihun5968@naver.com?subject=Account%20deletion%20request">jihun5968@naver.com</a>
+  with the subject “Account deletion request”, and include the app name and your in-game nickname.
+</p>
+<p class="en">
+  <strong>What is deleted:</strong> the account ID and authentication token, the nickname, all match records
+  (plays, wins, best score / rating, best wave, rank total) and the account creation timestamp.
+</p>
+<p class="en">
+  <strong>Retention:</strong> requests are processed within 30 days. Once processed, the data is permanently
+  removed from the server and no long-term backup copies are retained. Data stored on the device is removed
+  when the app is uninstalled.
+</p>
+
+<footer>
+  개발자 연락처: jihun5968@naver.com<br>
+  최종 수정일: 2026년 8월 30일
+</footer>
+
+</div>
+</body>
+</html>
