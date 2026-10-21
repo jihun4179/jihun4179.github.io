@@ -1,0 +1,15 @@
+{
+  "mails": [
+    {
+      "id": "v15-gift",
+      "title": "1.5 업데이트 선물",
+      "body": "햄버거집 알바가 출근했어요! 오늘도 진상 손님 막느라 수고 많아요. 작은 선물 받아 가세요.",
+      "titleEn": "Version 1.5 gift",
+      "bodyEn": "The Burger Crew has clocked in! Thanks for holding off the rush. Here's a little gift.",
+      "coins": 300,
+      "gems": 10,
+      "start": "2026-10-21",
+      "end": "2026-12-31"
+    }
+  ]
+}
