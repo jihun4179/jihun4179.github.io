@@ -142,6 +142,20 @@
       "to": [
         "AD-5SW2BK"
       ]
+    },
+    {
+      "id": "gift-AD-FV2QB9-20261109",
+      "title": "항상 고마워요, 알바생님!",
+      "body": "알바 디펜스를 열심히 해 주셔서 정말 감사해요. 고마운 마음을 담아 코인 3,500개를 보내 드려요. 앞으로도 더 재미있는 알바와 손님들로 찾아갈게요. 오늘도 든든하게 버텨 주세요!",
+      "titleEn": "Thank you, partner!",
+      "bodyEn": "Thank you so much for playing Part-Time Defense. Here are 3,500 coins as a token of our thanks. More fun jobs and customers are on the way, so keep holding the line!",
+      "coins": 3500,
+      "gems": 0,
+      "start": "2026-11-09",
+      "end": "2026-12-31",
+      "to": [
+        "AD-FV2QB9"
+      ]
     }
   ],
   "admins": [
