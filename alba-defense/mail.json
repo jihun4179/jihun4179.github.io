@@ -156,6 +156,20 @@
       "to": [
         "AD-FV2QB9"
       ]
+    },
+    {
+      "id": "gift-AD-HYVZPB-20261115-gems300",
+      "title": "테스트용 다이아 도착!",
+      "body": "테스트에 써 주세요. 다이아 300개를 보내 드려요.",
+      "titleEn": "Test gems",
+      "bodyEn": "Here are 300 gems for testing.",
+      "coins": 0,
+      "gems": 300,
+      "start": "2026-11-15",
+      "to": [
+        "AD-HYVZPB"
+      ],
+      "end": "2026-12-31"
     }
   ],
   "admins": [
