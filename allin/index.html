@@ -573,7 +573,7 @@ const ELITE_POOL = ['shark', 'twins'];
 /** 층 (카지노 건물 오르기) — 층마다 사장 보스 */
 const FLOORS = [
   { name: '지하 · 뒷골목 도박장', boss: { name: '뒷골목 타짜왕',  hp: 120, aggro: .55, tight: .30, bluff: .20, line: '여긴 내 구역이야.', startUnits: 2 } },
-  { name: '1층 · 카지노 홀',      boss: { name: '카지노 지배인',  hp: 170, aggro: .55, tight: .30, bluff: .12, line: '하우스는 언제나 이긴다.', rig: true, startUnits: 2 } },
+  { name: '1층 · 카지노 홀',      boss: { name: '카지노 지배인',  hp: 150, aggro: .55, tight: .30, bluff: .12, line: '하우스는 언제나 이긴다.', rig: true, startUnits: 2 } },
   { name: '20층 · VIP 룸',        boss: { name: 'VIP 딜러',       hp: 220, aggro: .60, tight: .28, bluff: .15, line: '당신 패, 다 보여.', peekHole: true, startUnits: 3 } },
   { name: '꼭대기 · 펜트하우스',  boss: { name: '회장',           hp: 300, aggro: .65, tight: .26, bluff: .18, line: '올인하시겠습니까?', rig: true, doubleSummon: true, startUnits: 3 } },
 ];
@@ -631,6 +631,7 @@ const BAL = Object.assign({
   pot: 0,                                      // 쇼다운에서 진 쪽 본체가 판돈 × 이것 만큼 잃는다 (봇 측정: 아무도 안 맞는 라운드가 2%뿐이라 0)
   rig: .2,                                     // 카지노 지배인 · 회장이 공용 카드를 바꿔치기할 확률 (.3 이면 2층 사장에서 34%가 죽었다)
   doubleSummon: 1.3,                           // 회장의 소환 수 배율
+  bossHeal: .75,                               // 사장을 이기면 '잃은 체력'의 몇 %를 채우나 (슬더스: 막 사이 75% — 예전 '최대 체력 30%'는 층을 넘을수록 바닥났다)
 }, window.__BAL || {});
 
 // ---- src/game.js
@@ -1483,9 +1484,9 @@ function winBattle() {
   run.stats.fights++;
   const boss = b.e.boss, elite = b.e.elite;
   const g = gainGold((boss ? rnd(60, 80) : rnd(...(b.e.gold || [15, 20]))) + (chip('goldChip') ? 15 : 0));
-  if (boss) run.hp = Math.min(run.maxHp, run.hp + Math.round(run.maxHp * .3));
+  const healed = boss ? Math.round((run.maxHp - run.hp) * BAL.bossHeal) : 0; if (boss) run.hp += healed;
   const opts = [{ k: 'card', v: randomCard() }, { k: 'card', v: randomCard(.6) }, { k: 'trick', v: pick(Object.keys(TRICKS)) }];
-  $('#app').innerHTML = `${header()}<h2>${b.e.name} 격파!</h2><p>골드 +${g}${boss ? ' · 체력 30% 회복' : ''}</p><h3>하나를 덱에 넣으세요</h3>
+  $('#app').innerHTML = `${header()}<h2>${b.e.name} 격파!</h2><p>골드 +${g}${boss ? ` · 체력 +${healed} (잃은 체력의 ${Math.round(BAL.bossHeal * 100)}%)` : ''}</p><h3>하나를 덱에 넣으세요</h3>
     <div class="choices">${opts.map((o, i) => `<div class="choice" data-i="${i}">${o.k === 'card' ? cardHtml(o.v, { cls: 'big' }) + `<p>${cardDesc(o.v)}</p>` : trickHtml(o.v)}</div>`).join('')}</div>
     <button id="skip" class="ghost">건너뛰기</button>`;
   const done = () => (elite || boss) ? chipChoice(boss ? '사장의 금고' : 'VIP 보상', boss ? 2 : 1, advance, boss) : advance();
