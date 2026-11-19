@@ -617,6 +617,20 @@ const RELICS = {
   highRoller: { kind: 'special', name: '하이 롤러',     dir: '큰 판돈', cats: [], bias: '',   text: '판돈 최대 +4 · 판돈 5 이상으로 이기면 쫄병 세기 +30% · 대신 최대 체력 -10', lv: '' },
 };
 
+/** 밸런스 손잡이 (2026-11-19) — 숫자는 전부 여기서. 근거 · 목표 · 봇 측정값은 docs/BALANCE.md.
+ *  봇 검사(tools/sim.mjs)는 window.__BAL 로 이 값을 덮어써 가며 맞춘다. */
+const BAL = Object.assign({
+  startHp: 90,
+  foeMul: { normal: 1, elite: 1, boss: 1 },   // 적 쫄병 세기 (적 종류별)
+  foeMulPerFloor: .25,                         // 층마다 적 쫄병 세기 +
+  foeHpPerFloor: .55,                          // 층마다 일반 · 엘리트 본체 체력 +
+  foeHp: { normal: 1, elite: 1, boss: 1 },     // 적 본체 체력 배율
+  sweep: .5,                                   // 상대 진영을 비우면 남은 공격 합의 몇 %가 본체로
+  press: .15,                                  // 둘 다 남으면 서로 몇 %씩 본체로
+  foldBase: 1,                                 // 내가 폴드: 판돈 + 이것
+  pot: 0,                                      // 쇼다운에서 진 쪽 본체가 판돈 × 이것 만큼 잃는다
+}, window.__BAL || {});
+
 // ---- src/game.js
 
 
@@ -660,7 +674,7 @@ function newRun(charId = 'dealer') {
   uid = 1;
   // 시작 덱 12장: 무늬마다 낮은 · 중간 · 높은 하나씩
   const start = [[4, 'S'], [9, 'S'], [13, 'S'], [3, 'H'], [8, 'H'], [12, 'H'], [5, 'D'], [10, 'D'], [14, 'D'], [2, 'C'], [7, 'C'], [11, 'C']].map(([r, s]) => card(r, s));
-  run = { hp: 90, maxHp: 90, gold: 60, deck: start, tricks: START_TRICKS.slice(), chips: [], slots: 5, charms: [], floor: 0, step: 0, offer: null, char: charId, stats: { fights: 0 } };
+  run = { hp: BAL.startHp, maxHp: BAL.startHp, gold: 60, deck: start, tricks: START_TRICKS.slice(), chips: [], slots: 5, charms: [], floor: 0, step: 0, offer: null, char: charId, stats: { fights: 0 } };
   showRelicPick();
 }
 /** 등반 시작 유물: 랜덤 3개 중 1개 */
@@ -754,8 +768,9 @@ const maxStake = () => (chip('devilChip') ? 12 : 8) + (relic('highRoller') ? 4 :
 function startBattle(key) {
   const f = run.floor;
   const base = key === 'boss' ? FLOORS[f].boss : ENEMIES[key];
-  const e = { ...base, boss: key === 'boss', lvl: 1 + .25 * f };
-  const hp = Math.round(base.hp * (key === 'boss' ? 1 : 1 + .55 * f));
+  const kind = key === 'boss' ? 'boss' : base.elite ? 'elite' : 'normal';
+  const e = { ...base, boss: key === 'boss', kind, lvl: BAL.foeMul[kind] * (1 + BAL.foeMulPerFloor * f) };
+  const hp = Math.round(base.hp * BAL.foeHp[kind] * (key === 'boss' ? 1 : 1 + BAL.foeHpPerFloor * f));
   b = { key, e, hp, maxHp: hp, round: 0, draw: shuffle(run.deck.slice()), tdraw: shuffle(run.tricks.slice()), log: [], mine: [], foe: [], hand: [], fast: !!window.__allinFast };
   // 에너지는 전투 전체 자원 (2026-11-17 사용자: "에너지 계속 채워지고 두 장은 무조건 쓸 수 있으니 쉽다"): 시작 3 · 쇼다운 승리/상대 폴드 +1 · 최대 6
   b.energy = 3 + (chip('blindDealer') ? 2 : 0) + (charm('espresso') ? 2 : 0); b.maxE = 6;
@@ -975,7 +990,7 @@ async function foldBy(who) {
   // 폴드 = 이번 라운드를 접는다: 양쪽 다 소환 없이, 접은 쪽 본체만 판돈만큼 손해 (안전한 후퇴)
   b.phase = 'show';
   if (who === 'me') {
-    let dmg = b.stake + 1; if (chip('devilChip')) dmg *= 3; run.hp = Math.max(0, run.hp - dmg);
+    let dmg = b.stake + BAL.foldBase; if (chip('devilChip')) dmg *= 3; run.hp = Math.max(0, run.hp - dmg);
     log(`폴드 — 내 본체 ${dmg} 피해`);
   } else {
     const dmg = b.stake * (chip('bluffTax') ? 4 : 2); b.hp = Math.max(0, b.hp - dmg);
@@ -1295,8 +1310,11 @@ async function fight() {
   // 상대 진영이 비면 남은 쫄병이 본체를 친다(공격 합의 절반) · 둘 다 남으면 15%씩 밀어붙인다 (2026-11-16 봇: 한 라운드에 판이 끝나는 눈덩이 줄임)
   const sum = a => a.reduce((s, u) => s + u.atk, 0);
   let toFoe = 0, toMe = 0;
-  if (!b.foe.length) toFoe = Math.round(sum(b.mine) * .5); else if (b.mine.length) toFoe = Math.round(sum(b.mine) * .15);
-  if (!b.mine.length) toMe = Math.round(sum(b.foe) * .5); else if (b.foe.length) toMe = Math.round(sum(b.foe) * .15);
+  if (!b.foe.length) toFoe = Math.round(sum(b.mine) * BAL.sweep); else if (b.mine.length) toFoe = Math.round(sum(b.mine) * BAL.press);
+  if (!b.mine.length) toMe = Math.round(sum(b.foe) * BAL.sweep); else if (b.foe.length) toMe = Math.round(sum(b.foe) * BAL.press);
+  // 판돈: 쇼다운에서 진 쪽이 판돈을 잃는다 (둘 다 전멸해도 판이 앞으로 간다)
+  if (BAL.pot && b.result && b.result.win === true) toFoe += Math.round(b.stake * BAL.pot);
+  if (BAL.pot && b.result && b.result.win === false) toMe += Math.round(b.stake * BAL.pot);
   if (toFoe) { b.hp = Math.max(0, b.hp - toFoe); if (chip('vampire')) run.hp = Math.min(run.maxHp, run.hp + Math.round(toFoe * .3)); }
   if (toMe) run.hp = Math.max(0, run.hp - toMe);
   await Promise.all([chargeFx('foe', toFoe, b.maxHp), sleep(toFoe && toMe ? 260 : 0).then(() => chargeFx('mine', toMe, run.maxHp))]);

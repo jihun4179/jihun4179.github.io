@@ -13,7 +13,7 @@ let html = fs.readFileSync(src, 'utf8')
   .replace('const sleep = ms => new Promise(r => setTimeout(r, ms));', 'const sleep = ms => Promise.resolve();')
   .replace(/url\('data:image\/jpeg;base64,[^']*'\)/g, 'none')
   .replace(/'data:image\/jpeg;base64,[^']*'/g, "''");
-const tmp = path.join(here, '.sim.html');
+const tmp = path.join(here, `.sim-${process.pid}.html`);
 fs.writeFileSync(tmp, html);
 
 const BOT = async (RUNS) => {
@@ -92,7 +92,11 @@ const BOT = async (RUNS) => {
     click('#skip') || click('#leave') || click('#back');
   }
   const tr = window.__trace || []; S.zero = tr.filter(l => l.includes('toFoe0 toMe0')).length; S.fightRounds = tr.filter(l => l.includes(' toFoe')).length; S.long = S.fights.filter(f => f.rounds > 15).length;
-  return { zero: S.zero, fightRounds: S.fightRounds, long: S.long, runs: S.runs, wins: S.wins, deathAt: S.deathAt, fights: S.fights, cats: S.cats, enCats: S.enCats, folds: S.folds };
+  const num = (l, k) => +((l.match(new RegExp(k + '(\\d+)')) || [0, 0])[1]);
+  const fl = tr.filter(l => l.includes(' toFoe')); S.toMe = fl.reduce((a, l) => a + num(l, 'toMe'), 0); S.toFoe = fl.reduce((a, l) => a + num(l, 'toFoe'), 0);
+  S.sdW = fl.filter(l => / W:/.test(l)).length; S.sdL = fl.filter(l => / L:/.test(l)).length;
+  S.foldMeDmg = tr.filter(l => l.includes('fold-me')).reduce((a, l) => a + num(l, 'stake') + BAL.foldBase, 0);
+  return { toMe: S.toMe, toFoe: S.toFoe, sdW: S.sdW, sdL: S.sdL, foldMeDmg: S.foldMeDmg, zero: S.zero, fightRounds: S.fightRounds, long: S.long, runs: S.runs, wins: S.wins, deathAt: S.deathAt, fights: S.fights, cats: S.cats, enCats: S.enCats, folds: S.folds };
 };
 
 const PAR = +(process.env.PAR || 4);
@@ -101,16 +105,17 @@ const t0 = Date.now(); const errs = [];
 const parts = await Promise.all(Array.from({ length: PAR }, async (_, i) => {
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   page.on('pageerror', e => errs.push(e.message)); page.on('console', m => console.error('[p' + i + '] ' + m.text()));
+  if (process.env.BAL) await page.addInitScript(`window.__BAL = ${process.env.BAL};`);
   await page.route(/^https?:/, r => r.abort()); await page.goto('file://' + tmp, { waitUntil: 'domcontentloaded' });
   return page.evaluate(BOT, Math.ceil(RUNS / PAR));
 }));
 // 합치기
-const out = { zero: 0, fightRounds: 0, long: 0, runs: 0, wins: 0, deathAt: {}, fights: [], cats: Array(10).fill(0), enCats: Array(10).fill(0), folds: { me: 0, en: 0 } };
-for (const p of parts) { out.zero += p.zero; out.fightRounds += p.fightRounds; out.long += p.long; out.runs += p.runs; out.wins += p.wins; for (const k in p.deathAt) out.deathAt[k] = (out.deathAt[k] || 0) + p.deathAt[k]; out.fights.push(...p.fights); p.cats.forEach((c, i) => out.cats[i] += c); p.enCats.forEach((c, i) => out.enCats[i] += c); out.folds.me += p.folds.me; out.folds.en += p.folds.en; }
+const out = { toMe: 0, toFoe: 0, sdW: 0, sdL: 0, foldMeDmg: 0, zero: 0, fightRounds: 0, long: 0, runs: 0, wins: 0, deathAt: {}, fights: [], cats: Array(10).fill(0), enCats: Array(10).fill(0), folds: { me: 0, en: 0 } };
+for (const p of parts) { for (const k of ['toMe', 'toFoe', 'sdW', 'sdL', 'foldMeDmg']) out[k] += p[k]; out.zero += p.zero; out.fightRounds += p.fightRounds; out.long += p.long; out.runs += p.runs; out.wins += p.wins; for (const k in p.deathAt) out.deathAt[k] = (out.deathAt[k] || 0) + p.deathAt[k]; out.fights.push(...p.fights); p.cats.forEach((c, i) => out.cats[i] += c); p.enCats.forEach((c, i) => out.enCats[i] += c); out.folds.me += p.folds.me; out.folds.en += p.folds.en; }
 const by = {}; for (const f of out.fights) { const k = `${f.floor}-${f.type}`; (by[k] = by[k] || { n: 0, lost: 0, rounds: 0, die: 0 }); by[k].n++; by[k].lost += f.lost; by[k].rounds += f.rounds; if (!f.won) by[k].die++; }
 for (const k in by) { by[k].lost = +(by[k].lost / by[k].n).toFixed(1); by[k].rounds = +(by[k].rounds / by[k].n).toFixed(1); by[k].diePct = +(by[k].die / by[k].n * 100).toFixed(1); }
 const tot = out.cats.reduce((a, c) => a + c, 0);
 const pct = a => a.map(c => +(c / tot * 100).toFixed(1));
-console.log(JSON.stringify({ zeroDamageRounds: +(out.zero / out.fightRounds * 100).toFixed(1), fightsOver15Rounds: out.long, runs: out.runs, winRate: +(out.wins / out.runs * 100).toFixed(1), deathAt: out.deathAt, byFloorType: by, myHands: pct(out.cats), enHands: pct(out.enCats), folds: out.folds, seconds: Math.round((Date.now() - t0) / 1000), errors: errs.slice(0, 5) }, null, 1));
+console.log(JSON.stringify({ perFightRound: { toMe: +(out.toMe / out.fightRounds).toFixed(2), toFoe: +(out.toFoe / out.fightRounds).toFixed(2), showdownWinPct: +(out.sdW / (out.sdW + out.sdL) * 100).toFixed(1) }, foldDmgPerRun: +(out.foldMeDmg / out.runs).toFixed(1), zeroDamageRounds: +(out.zero / out.fightRounds * 100).toFixed(1), fightsOver15Rounds: out.long, runs: out.runs, winRate: +(out.wins / out.runs * 100).toFixed(1), deathAt: out.deathAt, byFloorType: by, myHands: pct(out.cats), enHands: pct(out.enCats), folds: out.folds, seconds: Math.round((Date.now() - t0) / 1000), errors: errs.slice(0, 5) }, null, 1));
 await browser.close();
-fs.unlinkSync(tmp);
+try { fs.unlinkSync(tmp); } catch {}
