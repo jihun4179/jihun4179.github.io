@@ -336,6 +336,32 @@ button:disabled { opacity: .3; cursor: default; }
 .charcard.relic .lvline { color: #ffe08a; font-size: 17px; }
 .relictag b { color: #fff; background: #c9902a; border-radius: 8px; padding: 0 8px; margin-left: 4px; }
 
+/* ===== 타격감 (2026-11-19) — 예비 동작 · 멈칫 · 밀림 · 쓰러짐 · 숫자 · 돌격 · 카드 뒤집기 ===== */
+.uhp div { transition: width .28s ease-out; }
+.bar div { transition: width .45s cubic-bezier(.2,.8,.2,1); }
+.fx-spawn .ubody { animation: spawn .52s cubic-bezier(.3,1.3,.5,1) both; }
+@keyframes spawn { 0% { transform: translateY(-70px) scale(.5) rotate(-12deg); opacity: 0; } 55% { transform: translateY(5px) scale(1.12, .86); opacity: 1; } 78% { transform: translateY(-3px) scale(.96, 1.05); } }
+.fx.num { font-family: 'Black Han Sans'; color: #ff6a5a; text-shadow: 0 3px 0 #000, 0 0 10px rgba(0,0,0,.6); white-space: nowrap; z-index: 3; }
+.fx.num.heal { color: #7dffae; } .fx.num.block { color: #9fd0ff; } .fx.num.crit { color: #ffd84a; }
+.fx.num.crit::after { content: '치명!'; position: absolute; left: 50%; top: -22px; transform: translateX(-50%); font-size: 18px; color: #fff3b0; }
+.fx.shard { width: 12px; height: 16px; border-radius: 2px; background: linear-gradient(#fffdf6, #d9cfb8); box-shadow: 0 0 6px rgba(255,255,255,.5); }
+.fx.shard.foe { background: linear-gradient(#84222f, #4a1018); box-shadow: 0 0 6px rgba(255,120,90,.6); }
+.fx.dust { width: 70px; height: 18px; border-radius: 50%; background: radial-gradient(ellipse, rgba(255,240,200,.55), transparent 70%); }
+#fxtop { position: absolute; inset: 0; pointer-events: none; z-index: 50; overflow: hidden; }
+.fx.streak { width: 60px; height: 8px; border-radius: 4px; transform-origin: 100% 50%; }
+.fx.streak.mine { background: linear-gradient(90deg, transparent, #ffe08a 60%, #fff); box-shadow: 0 0 14px #ffd35a; }
+.fx.streak.foe { background: linear-gradient(90deg, transparent, #ff8a6a 60%, #fff); box-shadow: 0 0 14px #ff5a3a; }
+.fx.num.body { font-size: 64px; }
+.bar.hurt { animation: barHurt .42s; } @keyframes barHurt { 15% { transform: translateX(-8px); filter: brightness(1.8); } 35% { transform: translateX(7px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(2px); } }
+.vignette { position: absolute; inset: 0; pointer-events: none; z-index: 49; box-shadow: inset 0 0 160px 40px rgba(220,30,30,.65); opacity: 0; }
+.card.deal { animation: deal .34s cubic-bezier(.2,.9,.3,1.2) both; } @keyframes deal { from { transform: translateY(-36px) rotateY(90deg); opacity: 0; } }
+.card.flip { animation: flipIn .42s ease-out both; } @keyframes flipIn { from { transform: rotateY(90deg); } }
+.card.used { box-shadow: 0 0 0 3px var(--gold), 0 0 22px rgba(242,196,90,.95), 0 6px 0 rgba(0,0,0,.35); animation: usedPulse .9s ease-out; }
+@keyframes usedPulse { 30% { transform: translateY(-10px) scale(1.06); } }
+.table .card.unused, .enemy .card.unused { opacity: .45; }
+.field .result.pop { animation: resultPop .5s cubic-bezier(.3,1.5,.5,1) both; } @keyframes resultPop { from { transform: translateX(-50%) scale(1.8); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .card.deal, .card.flip, .card.used, .fx-spawn .ubody, .bar.hurt { animation: none; } }
+
 </style>
 <main id="app"></main>
 <script>
@@ -364,6 +390,7 @@ function straightHigh(rankSet, need) {
 }
 
 function eval5(cs, rules) {
+  if (!cs.length) return { cat: 0, score: 0 };   // 저주 두 장만 든 프리플랍 — 빈 손 (2026-11-19 봇 검사로 찾은 멈춤 버그)
   const need = rules.shortStraight ? 4 : 5, flushNeed = rules.shortFlush ? 4 : 5;
   const counts = new Map(); for (const c of cs) counts.set(c.r, (counts.get(c.r) || 0) + 1);
   const groups = [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0]);
@@ -828,6 +855,7 @@ function dealOne() {
     let bc = c, bs = -1; for (const x of cands) { const s = enBest([...b.board, x]).score; if (s > bs) { bs = s; bc = x; } }
     if (bc !== c) say('카드를 슬쩍 바꿨다…!', 'cheat'); c = bc;
   }
+  (b.fresh = b.fresh || []).push(b.board.length);
   b.board.push(c);
 }
 async function nextStreet() {
@@ -921,7 +949,7 @@ const planText = p => `${CLASSES[p.s].name} ×${p.n}${(p.extra || []).map(x => '
 const SPECIAL = { 4: ['R'], 6: ['K'], 7: ['G'], 8: ['R', 'G'], 9: ['R', 'K', 'G'] };
 
 async function showdown() {
-  b.phase = 'show'; b.peeked = b.peeked.map(() => true); b.hidden = -1;
+  b.phase = 'show'; b.reveal = b.peeked.some(p => !p); b.peeked = b.peeked.map(() => true); b.hidden = -1;
   const me = myBest(), en = enBest();
   const win = me.score > en.score ? true : en.score > me.score ? false : null;
   const pm = summonPlan('mine', me, win), pf = summonPlan('foe', en, win === null ? null : !win);
@@ -977,14 +1005,15 @@ function targetFor(u, foes) {
   return foes.find(x => x.s === 'C' || x.s === 'G') || foes.find(isFront) || foes[0];
 }
 function heat() { return b.tick >= 4 ? 1 + .35 * (b.tick - 3) : 1; }
-function hurt(t, dmg) {
+function hurt(t, dmg, crit = false) {
   if (t.hp <= 0) return;
   if (t.side === 'mine' && b.guard) dmg *= .75;
   dmg = Math.max(1, Math.round(dmg * heat()));
   if (t.shield > 0) { const a = Math.min(t.shield, dmg); t.shield -= a; dmg -= a; }
-  if (dmg > 0) { t.hp -= dmg; t.fx = 'hit'; t.dmg = (t.dmg > 0 ? t.dmg : 0) + dmg; } else t.fx = 'block';
+  if (dmg > 0) { t.hp -= dmg; t.fx = 'hit'; const r = dmg / t.maxHp; impact(t, r); floatNum(t, '-' + dmg, crit ? 'crit' : '', r); }
+  else { t.fx = 'block'; impact(t, 0); floatNum(t, '막음', 'block', .1); }
 }
-function healUnit(x, h) { if (x.hp <= 0) return; h = Math.max(1, Math.round(h / (b.tick >= 4 ? 2 : 1))); x.hp = Math.min(x.maxHp, x.hp + h); x.fx = 'heal'; x.dmg = -h; }
+function healUnit(x, h) { if (x.hp <= 0) return; h = Math.max(1, Math.round(h / (b.tick >= 4 ? 2 : 1))); x.hp = Math.min(x.maxHp, x.hp + h); x.fx = 'heal'; floatNum(x, '+' + h, 'heal', h / x.maxHp); }
 function applyEl(u, t, dmg, foes, elemMul) {
   if (u.el === 'fire') { t.burn = Math.round(2 * elemMul); t.burnT = 2; }
   if (u.el === 'ice') t.frozen = Math.max(t.frozen, 1);
@@ -1045,14 +1074,125 @@ function banner(u, text) {
   const d = piece('skillname ' + u.side, p.x, Math.max(26, p.y - 74), text);
   return play(d, [{ transform: 'translate(-50%,-50%) scale(1.8)', opacity: 0 }, { offset: .15, transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }, { offset: .8, opacity: 1 }, { transform: 'translate(-50%,-80%) scale(1)', opacity: 0 }], 900);
 }
+/** 돌진: 뒤로 살짝 당겼다가(예비 동작) 앞으로 찌르고, 맞는 순간 잠깐 멈췄다가(히트스톱) 돌아온다.
+ *  끝까지 기다리지 않고 '맞는 순간'에 돌아온다 — 피해 · 번쩍임은 그 순간에 맞춘다. */
 function lunge(u, far = 26) {
-  const el = $(`.field [data-u="${u.id}"] .ubody`); if (!el) return Promise.resolve();
-  const dx = u.side === 'mine' ? far : -far;
-  return play(el, [{ transform: 'translateX(0)' }, { offset: .4, transform: `translateX(${dx}px) scale(1.08)` }, { transform: 'translateX(0)' }], 240, { keep: true });
+  const el = bodyEl(u); if (!el) return Promise.resolve();
+  const d = u.side === 'mine' ? 1 : -1, sk = -3 * d, T = 380;
+  const a = play(el, [
+    { transform: `translateX(0) skewX(${sk}deg)` },
+    { offset: .26, transform: `translateX(${-10 * d}px) skewX(${sk}deg) scale(.94, 1.05)`, easing: 'cubic-bezier(.6,0,.9,.4)' },   // 예비 동작
+    { offset: .42, transform: `translateX(${far * d}px) skewX(${sk * 3}deg) scale(1.1, .93)` },   // 타격
+    { offset: .56, transform: `translateX(${far * d}px) skewX(${sk * 3}deg) scale(1.1, .93)`, easing: 'ease-out' },   // 멈칫
+    { transform: `translateX(0) skewX(${sk}deg)` },
+  ], T, { keep: true });
+  return Promise.race([a, sleep(T * .42 * FXK())]);
 }
-function glowUnit(u, color) {
+const bodyEl = u => $(`.field [data-u="${u.id}"] .ubody`);
+const unitEl = u => $(`.field [data-u="${u.id}"]`);
+/** 맞은 쪽: 하얗게 번쩍인 채 멈칫 → 맞은 방향으로 밀렸다 → 제자리. 세게 맞을수록 많이 밀린다. */
+function impact(t, ratio = .2) {
+  const el = bodyEl(t); if (!el) return;
+  const d = t.side === 'mine' ? -1 : 1, sk = t.side === 'mine' ? -3 : 3, kb = Math.min(24, 6 + ratio * 40) * d;
+  play(el, [
+    { transform: `translateX(0) skewX(${sk}deg)`, filter: 'brightness(3) saturate(0)' },
+    { offset: .22, transform: `translateX(0) skewX(${sk}deg)`, filter: 'brightness(3) saturate(0)' },
+    { offset: .5, transform: `translateX(${kb}px) skewX(${sk}deg) rotate(${d * 7}deg)`, filter: 'brightness(1.3)' },
+    { transform: `translateX(0) skewX(${sk}deg)`, filter: 'none' },
+  ], 320, { keep: true });
+}
+/** 숫자: 전장 위에 크게 튀어나왔다가 떠오르며 사라진다. 피해가 체력 대비 클수록 크게. */
+function floatNum(u, text, cls = '', ratio = .2) {
+  const p = posOf(u); if (!p) return;
+  const size = Math.round(26 + Math.min(1, ratio) * 30) + (cls.includes('crit') ? 8 : 0);
+  const d = piece('num ' + cls, p.x + (Math.random() * 16 - 8), p.y - 46, text); if (d) d.style.fontSize = size + 'px';
+  play(d, [
+    { transform: 'translate(-50%,-50%) scale(.4)', opacity: 0 },
+    { offset: .12, transform: 'translate(-50%,-50%) scale(1.35)', opacity: 1 },
+    { offset: .3, transform: 'translate(-50%,-55%) scale(1)', opacity: 1 },
+    { offset: .8, opacity: 1 },
+    { transform: 'translate(-50%, calc(-50% - 44px)) scale(.95)', opacity: 0 },
+  ], 760);
+}
+/** 쓰러짐: 번쩍 → 살짝 튀었다가 기울며 가라앉는다 + 카드 조각이 흩어진다. */
+async function deathFx() {
+  const dead = [...b.mine, ...b.foe].filter(u => u.hp <= 0); if (!dead.length) return;
+  await Promise.all(dead.map((u, i) => {
+    const p = posOf(u), el = unitEl(u);
+    if (p) for (let k = 0; k < 6; k++) {
+      const s = piece('shard ' + u.side, p.x, p.y), ang = Math.random() * Math.PI * 2, r = 50 + Math.random() * 50;
+      play(s, [{ transform: 'translate(-50%,-50%) rotate(0)', opacity: 1 }, { transform: `translate(calc(-50% + ${Math.cos(ang) * r}px), calc(-50% + ${Math.sin(ang) * r * .6 + 40}px)) rotate(${200 + Math.random() * 300}deg)`, opacity: 0 }], 520, { ease: 'cubic-bezier(.2,.6,.4,1)', delay: i * 40 });
+    }
+    return play(el, [
+      { transform: 'none', opacity: 1, filter: 'brightness(2.4)' },
+      { offset: .2, transform: 'translateY(-8px) scale(1.06)', opacity: 1, filter: 'brightness(2)' },
+      { transform: `translateY(28px) rotate(${u.side === 'mine' ? -30 : 30}deg) scale(.7)`, opacity: 0, filter: 'grayscale(1)' },
+    ], 300, { keep: true, delay: i * 30, ease: 'ease-in' });
+  }));
+}
+/** 전장 다시 그리기 + 남은 쫄병이 빈자리로 미끄러져 간다 (FLIP). */
+function renderFieldFlip() {
+  const before = new Map(); $$('.field [data-u]').forEach(el => before.set(el.dataset.u, el.getBoundingClientRect()));
+  renderField();
+  if (window.__allinFast) return;
+  const k = $('#app').getBoundingClientRect().width / 1920 || 1;
+  $$('.field [data-u]').forEach(el => {
+    const r0 = before.get(el.dataset.u), r = el.getBoundingClientRect(); if (!r0) return;
+    const dx = (r0.left - r.left) / k, dy = (r0.top - r.top) / k; if (Math.abs(dx) + Math.abs(dy) < 2) return;
+    el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 280 * FXK(), easing: 'cubic-bezier(.2,.8,.2,1)' });
+  });
+}
+/** 싸우는 동안엔 전장을 통째로 다시 그리지 않는다 — 다시 그리면 다른 쫄병의 움직임이 중간에 끊긴다. 체력 · 보호막 · 상태만 고친다. */
+function syncField() {
+  for (const u of [...b.mine, ...b.foe]) {
+    const w = unitEl(u); if (!w) continue;
+    const bar = w.querySelector('.uhp div'); if (bar) bar.style.width = Math.max(0, Math.round(100 * u.hp / u.maxHp)) + '%';
+    const st = w.querySelector('.ust'); if (st) st.textContent = `⚔${u.atk} ♥${Math.max(0, u.hp)}`;
+    w.classList.toggle('shielded', u.shield > 0); w.classList.toggle('fx-frozen', u.frozen > 0); w.classList.toggle('fx-burn', u.burnT > 0);
+    let s = w.querySelector('.ubody s');
+    if (u.shield > 0) { if (!s) { s = document.createElement('s'); w.querySelector('.ubody').appendChild(s); } s.textContent = u.shield; } else if (s) s.remove();
+  }
+  clearFx();
+}
+/** 화면 전체 흔들림 — 큰 사건(본체에 큰 피해 · 사장 공격)에만 쓴다. */
+function shakeScreen(power = 8) {
+  const el = $('.screen'); if (!el || window.__allinFast || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const p = power;
+  el.animate([{ transform: 'none' }, { transform: `translate(${-p}px, ${p * .5}px)` }, { transform: `translate(${p * .8}px, ${-p * .4}px)` }, { transform: `translate(${-p * .5}px, ${p * .3}px)` }, { transform: `translate(${p * .2}px, 0)` }, { transform: 'none' }], { duration: 380, easing: 'ease-out' });
+}
+function appPos(el) {
+  const app = $('#app'), k = app.getBoundingClientRect().width / 1920 || 1, a = app.getBoundingClientRect(), r = el.getBoundingClientRect();
+  return { x: (r.left + r.width / 2 - a.left) / k, y: (r.top + r.height / 2 - a.top) / k };
+}
+function topPiece(cls, x, y, html = '') {
+  let L = $('#fxtop'); if (!L) { L = document.createElement('div'); L.id = 'fxtop'; $('#app').appendChild(L); }
+  const d = document.createElement('div'); d.className = 'fx ' + cls; d.style.left = x + 'px'; d.style.top = y + 'px'; d.innerHTML = html; L.appendChild(d); return d;
+}
+/** 돌격: 남은 쫄병마다 빛줄기가 상대 본체 체력바로 날아가 꽂힌다. 크게 맞으면 화면이 흔들리고 (내가 맞으면) 붉게 번진다. */
+async function chargeFx(hitSide, dmg, maxHp) {
+  if (!dmg || window.__allinFast) return;
+  const from = hitSide === 'foe' ? b.mine : b.foe, bar = hitSide === 'foe' ? $('.enemy .bar') : $('.me .bar'); if (!bar) return;
+  const tp = appPos(bar), ps = [];
+  from.slice(0, 7).forEach((u, i) => {
+    const el = unitEl(u); if (!el) return; const a = appPos(el.querySelector('.ubody') || el);
+    lunge(u, 18);
+    const ang = Math.atan2(tp.y - a.y, tp.x - a.x) * 180 / Math.PI;
+    const s = topPiece('streak ' + (hitSide === 'foe' ? 'mine' : 'foe'), a.x, a.y);
+    ps.push(play(s, [{ transform: `translate(-100%,-50%) rotate(${ang}deg) scaleX(.3)`, opacity: 0 }, { offset: .15, opacity: 1 }, { transform: `translate(calc(-100% + ${tp.x - a.x}px), calc(-50% + ${tp.y - a.y}px)) rotate(${ang}deg) scaleX(1.4)`, opacity: 1 }], 300, { ease: 'cubic-bezier(.5,0,.9,.6)', delay: 90 + i * 45 }));
+  });
+  await Promise.all(ps);
+  bar.classList.remove('hurt'); void bar.offsetWidth; bar.classList.add('hurt');
+  const inner = bar.querySelector('div'), hpNow = hitSide === 'foe' ? b.hp : run.hp; if (inner) inner.style.width = Math.max(0, Math.round(100 * hpNow / maxHp)) + '%';
+  const n = topPiece('num body ' + (hitSide === 'foe' ? '' : 'crit'), tp.x, tp.y - 30, `-${dmg}`);
+  play(n, [{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 }, { offset: .15, transform: 'translate(-50%,-50%) scale(1.4)', opacity: 1 }, { offset: .35, transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }, { offset: .8, opacity: 1 }, { transform: 'translate(-50%, -110%)', opacity: 0 }], 900);
+  const big = dmg >= maxHp * .15;
+  if (big) shakeScreen(hitSide === 'mine' ? 10 : 7);
+  if (hitSide === 'mine' && big) { const v = topPiece('vignette', 0, 0); play(v, [{ opacity: 0 }, { offset: .2, opacity: 1 }, { opacity: 0 }], 600); }
+}
+function glowUnit(u, color, ms = 380) {   // 기 모으기: 빛나며 살짝 부풀었다가 (짧으면 원거리 공격의 예비 동작)
   const el = $(`.field [data-u="${u.id}"] .ubody`); if (!el) return Promise.resolve();
-  return play(el, [{ filter: 'none' }, { offset: .3, filter: `drop-shadow(0 0 14px ${color}) brightness(1.4)` }, { filter: 'none' }], 380, { keep: true });
+  const sk = u.side === 'mine' ? -3 : 3;
+  return play(el, [{ filter: 'none', transform: `skewX(${sk}deg)` }, { offset: .6, filter: `drop-shadow(0 0 16px ${color}) brightness(1.5)`, transform: `skewX(${sk}deg) scale(1.08) translateY(-4px)` }, { filter: 'none', transform: `skewX(${sk}deg)` }], ms, { keep: true });
 }
 async function rain(side, cls, n = 14, drop = 120, ms = 380) {
   const box = sideBox(side); if (!box) return;
@@ -1087,7 +1227,7 @@ async function act(u, elemMul) {
   if (u.hp <= 0) return;
   const allies = u.side === 'mine' ? b.mine : b.foe, foes = () => (u.side === 'mine' ? b.foe : b.mine).filter(x => x.hp > 0);
   if (!foes().length) return;
-  if (u.burnT > 0) { u.hp -= u.burn; u.burnT--; u.fx = 'burn'; u.dmg = u.burn; burst(posOf(u), EL_COL.fire, 70); if (u.hp <= 0) return; }
+  if (u.burnT > 0) { u.hp -= u.burn; u.burnT--; u.fx = 'burn'; floatNum(u, '-' + u.burn, '', u.burn / u.maxHp); burst(posOf(u), EL_COL.fire, 70); if (u.hp <= 0) return; }
   if (u.frozen > 0) { u.frozen--; u.fx = 'frozen'; return; }
   const C = CLASSES[u.s], mineSide = u.side === 'mine';
   u.charge = (u.charge || 0) + 1;
@@ -1097,14 +1237,14 @@ async function act(u, elemMul) {
     if (w) { await projectile(posOf(u), posOf(w), 'holy', 260); burst(posOf(w), '#9dffb8', 80); healUnit(w, u.heal * (b.table.id === 'heart2' && mineSide ? 2 : 1)); return; }
   }
   const t = targetFor(u, foes()); if (!t) return;
-  let dmg = u.atk * (C.role === 'magic' && mineSide && b.table.id === 'dia2' ? 2 : 1) * (u.rally || 1);
-  if (mineSide && charm('luckyCoin') && Math.random() < .1) dmg *= 2;
-  if (C.role === 'rogue' && Math.random() < .3) dmg *= 2;
+  let dmg = u.atk * (C.role === 'magic' && mineSide && b.table.id === 'dia2' ? 2 : 1) * (u.rally || 1), crit = false;
+  if (mineSide && charm('luckyCoin') && Math.random() < .1) { dmg *= 2; crit = true; }
+  if (C.role === 'rogue' && Math.random() < .3) { dmg *= 2; crit = true; }
   const a = posOf(u), tp = posOf(t);
-  if (C.role === 'magic' || C.role === 'heal') await projectile(a, tp, 'orb ' + (u.el || (C.role === 'magic' ? 'arcane' : 'holyball')), 260);
-  else { await lunge(u, C.role === 'rogue' ? 60 : 26); slash(tp, u.side === 'foe', C.role === 'tank' && u.s === 'G' ? 1.2 : .8, u.el ? EL_COL[u.el] : '#fff'); }
-  if (u.el) burst(tp, EL_COL[u.el], 100);
-  hurt(t, dmg);
+  if (C.role === 'magic' || C.role === 'heal') { glowUnit(u, C.role === 'magic' ? '#b48cff' : '#9dffb8', 220); await sleep(90 * FXK()); await projectile(a, tp, 'orb ' + (u.el || (C.role === 'magic' ? 'arcane' : 'holyball')), 200); }
+  else { await lunge(u, C.role === 'rogue' ? 60 : 30); slash(tp, u.side === 'foe', C.role === 'tank' && u.s === 'G' ? 1.2 : crit ? 1.15 : .85, u.el ? EL_COL[u.el] : crit ? '#ffd84a' : '#fff'); }
+  if (u.el) burst(tp, EL_COL[u.el], 100); else if (crit) burst(tp, '#ffd84a', 120);
+  hurt(t, dmg, crit);
   if (C.role === 'magic') { const o = foes().find(x => x !== t); if (o) { hurt(o, dmg * (mineSide && chip('diamondQuiver') ? .8 : .4)); burst(posOf(o), '#c9a0ff', 70); } }   // 마법은 옆 적에게 번진다
   const o = applyEl(u, t, dmg, foes(), elemMul); if (o) boltLine(tp, posOf(o));
 }
@@ -1144,9 +1284,11 @@ async function fight() {
     // 한 턴: 양쪽이 거의 동시에 움직인다 (엇갈려 출발) → 끝난 뒤 한 번에 정리
     const order = []; const L = Math.max(b.mine.length, b.foe.length);
     for (let i = 0; i < L; i++) { if (b.mine[i]) order.push(b.mine[i]); if (b.foe[i]) order.push(b.foe[i]); }
-    const gap = b.fast ? 25 : 70;
-    await Promise.all(order.map((u, i) => sleep(i * gap).then(() => act(u, elemMul)).then(() => renderField())));
-    cleanup(); renderField(); await sleep(b.fast ? 40 : 160);
+    const gap = b.fast ? 25 : 42;
+    await Promise.all(order.map((u, i) => sleep(i * gap).then(() => act(u, elemMul)).then(() => syncField())));
+    await sleep(b.fast ? 40 : 110);   // 마지막 타격의 멈칫 · 밀림이 끝날 때까지
+    const died = [...b.mine, ...b.foe].some(u => u.hp <= 0);
+    await deathFx(); cleanup(); if (died) { renderFieldFlip(); await sleep(b.fast ? 40 : 140); } else renderField();
   }
   for (const u of [...b.mine, ...b.foe]) { u.shield = 0; u.rally = 1; }
   window.__lastFight = Math.round(performance.now() - t0);
@@ -1157,6 +1299,7 @@ async function fight() {
   if (!b.mine.length) toMe = Math.round(sum(b.foe) * .5); else if (b.foe.length) toMe = Math.round(sum(b.foe) * .15);
   if (toFoe) { b.hp = Math.max(0, b.hp - toFoe); if (chip('vampire')) run.hp = Math.min(run.maxHp, run.hp + Math.round(toFoe * .3)); }
   if (toMe) run.hp = Math.max(0, run.hp - toMe);
+  await Promise.all([chargeFx('foe', toFoe, b.maxHp), sleep(toFoe && toMe ? 260 : 0).then(() => chargeFx('mine', toMe, run.maxHp))]);
   log(`돌격! 적 본체 −${toFoe} · 내 본체 −${toMe}`);
   (window.__trace = window.__trace || []).push(`${b.e.name} R${b.round} ${b.result ? (b.result.win ? 'W' : b.result.win === false ? 'L' : 'T') + ':' + b.result.me.name + '/' + b.result.en.name : 'fold'} stake${b.stake} mine${b.mine.length}(${b.mine.reduce((a, u) => a + u.atk, 0)}) foe${b.foe.length}(${b.foe.reduce((a, u) => a + u.atk, 0)}) toFoe${toFoe} toMe${toMe} hp${run.hp}/${b.hp}`);
   if (chip('veteran')) for (const u of b.mine) u.atk++;
@@ -1185,7 +1328,7 @@ function flash(t) { const el = $('#flash'); if (!el) return; el.textContent = t;
 // ------------------------------------------------------------ 전투 화면
 function unitHtml(u) {
   const C = CLASSES[u.s], pct = Math.max(0, Math.round(100 * u.hp / u.maxHp));
-  const num = u.dmg ? `<span class="dmg ${u.dmg < 0 ? 'heal' : ''}">${u.dmg < 0 ? '+' + -u.dmg : '-' + u.dmg}</span>` : u.fx === 'block' ? '<span class="dmg block">막음</span>' : '';
+  const num = '';   // 숫자는 floatNum 이 전장 위에 띄운다 (2026-11-19)
   return `<div class="unit s-${u.s} ${UNIT_SYM[u.s] ? 'special' : ''} ${u.hp <= 0 ? 'dead' : ''} ${u.el ? 'el-' + u.el : ''} ${u.shield > 0 ? 'shielded' : ''} fx-${u.fx || 'none'}" data-u="${u.id}"><div class="ubody"><b>${C.glyph}</b><em>${UNIT_SYM[u.s] || SUIT_SYM[u.s]}</em>${u.el ? `<i>${ELEMENTS[u.el].mark}</i>` : ''}${u.shield > 0 ? `<s>${u.shield}</s>` : ''}</div>
     <div class="uhp"><div style="width:${pct}%"></div></div><div class="ust">⚔${u.atk} ♥${Math.max(0, u.hp)}</div>${u.life === 1 ? '<span class="tired" title="이번 라운드가 마지막">마지막</span>' : ''}${num}</div>`;
 }
@@ -1212,14 +1355,17 @@ function previewText() {
 function renderBattle() {
   const hpPct = Math.round(100 * b.hp / b.maxHp), myPct = Math.round(100 * run.hp / run.maxHp);
   const acting = b.phase === 'act', respond = b.phase === 'respond', picking = b.phase === 'pick';
-  const enCards = b.en.map((c, i) => cardHtml(c, { back: !b.peeked[i], cls: 'small' })).join('');
+  // 쇼다운: 족보에 쓰인 카드는 금빛으로 들썩, 안 쓰인 카드는 흐리게 (발라트로처럼 '무엇이 점수가 됐는지' 보이게)
+  const R = b.result, usedIds = R ? new Set([...(R.me.cards || []), ...(R.en.cards || [])].map(c => c.id)) : null;
+  const useCls = c => !R || !c ? '' : usedIds.has(c.id) ? ' used' : ' unused';
+  const enCards = b.en.map((c, i) => cardHtml(c, { back: !b.peeked[i], cls: 'small' + (b.reveal ? ' flip' : '') + useCls(c) })).join('');
   const nBoard = b.table.id === 'river2' ? 6 : 5;
-  const board = Array.from({ length: nBoard }, (_, i) => cardHtml(b.board[i])).join('');
+  const board = Array.from({ length: nBoard }, (_, i) => cardHtml(b.board[i], { cls: ((b.fresh || []).includes(i) ? 'deal' : '') + useCls(b.board[i]) })).join('');
   const slots = []; for (let i = 0; i < run.slots; i++) slots.push(run.chips[i] ? chipHtml(run.chips[i], 'mini') : '<div class="chipcard empty mini">빈 슬롯</div>');
   const myCards = picking
     ? b.offered.map(c => cardHtml(c, { cls: `big pickcard ${b.sel.has(c.id) ? 'sel' : ''}` }).replace('class="card', `data-id="${c.id}" class="card`)).join('')
-    : b.my.map((c, i) => cardHtml(c, { cls: 'big', back: i === b.hidden })).join('');
-  const res = b.result ? `<div class="result ${b.result.win ? 'win' : b.result.win === false ? 'lose' : ''}">나: ${b.result.me.name} · 적: ${b.result.en.name}</div>` : '';
+    : b.my.map((c, i) => cardHtml(c, { cls: 'big' + useCls(c), back: i === b.hidden })).join('');
+  const res = b.result ? `<div class="result ${b.result.win ? 'win' : b.result.win === false ? 'lose' : ''} ${b.reveal ? 'pop' : ''}">나: ${b.result.me.name} · 적: ${b.result.en.name}</div>` : '';
   const busy = b.phase === 'fight' || b.phase === 'show' || b.phase === 'busy';
   $('#app').innerHTML = `${header(false)}<div class="battle">
   <div class="side">${run.relic ? `<div class="relictag" title="${RELICS[run.relic].text}">✦ ${RELICS[run.relic].name}${RELICS[run.relic].lv ? ` <b>Lv.${run.relicLv || 0}</b>` : ''}<i>${RELICS[run.relic].text}${RELICS[run.relic].lv ? ` · Lv당 ${RELICS[run.relic].lv}` : ''}</i></div>` : ''}<h3>칩 슬롯</h3><div class="slotlist">${slots.join('')}</div>
@@ -1265,6 +1411,10 @@ function renderBattle() {
     if (b.sel.has(c.id)) b.sel.delete(c.id); else if (b.sel.size < 2) b.sel.add(c.id); renderBattle();
   });
   $$('.side .trick').forEach(el => el.onclick = () => useTrick(+el.dataset.i));
+  $$('.field .fx-spawn .ubody').forEach((el, i) => el.style.animationDelay = (window.__allinFast ? 0 : i * 60) + 'ms');   // 소환: 한 명씩 차례로 떨어진다
+  $$('.table .card.deal').forEach((el, i) => el.style.animationDelay = i * 90 + 'ms');
+  $$('.enemy .card.flip').forEach((el, i) => el.style.animationDelay = i * 110 + 'ms');
+  b.fresh = []; b.reveal = false;
   clearFx(); if (b.lvUp) { b.lvUp = false; flash(`✦ ${RELICS[run.relic].name} Lv.${run.relicLv} — ${RELICS[run.relic].lv}`); } if (b.sayNew && b.say && (b.say.k === 'raise' || b.say.k === 'fold')) flash(`${b.e.name} ${b.say.t}`); b.sayNew = false;
 }
 document.addEventListener('keydown', e => {
@@ -1441,7 +1591,7 @@ if (location.hash === '#demo') {   // 화면 확인용: 전장에 쫄병이 선 
   doSummon('foe', { n: 2, s: 'D', mul: 1, el: null, avg: 10 });
   dealOne(); dealOne(); dealOne(); dealOne(); b.street = 2; b.stake = 4; b.summonNote = '소환 — 나: 검사 ×3 · 화염  ·  적: 마법사 ×2'; b.mine[0].life = 1; doSummon('mine', { n: 2, s: 'C', mul: 1, el: null, avg: 9 }); doSummon('foe', { n: 2, s: 'C', mul: 1, el: null, avg: 9 }); doSummon('mine', { n: 0, s: 'S', mul: 1, el: null, avg: 10, extra: ['R', 'G'] }); doSummon('foe', { n: 0, s: 'S', mul: 1, el: null, avg: 10, extra: ['K'] }); b.say = { t: '레이즈! 판돈 4', k: 'raise' }; b.sayNew = false; clearFx(); renderBattle();
   if (location.search.includes('fight')) setTimeout(() => { b.mine.forEach(u => u.charge = 2); b.foe.forEach(u => u.charge = 1); fight(); }, 300);
-  if (location.search.includes('fx')) setTimeout(() => { window.__fxSlow = 12; arrowRain('foe'); holyLight('mine'); const sw = b.mine.find(u => u.s === 'S'); banner(sw, '회전베기!'); b.foe.filter(isFront).forEach(t => slash(posOf(t), false, 1.4, '#ffb070')); projectile(posOf(b.mine.find(u => u.s === 'D')), posOf(b.foe[0]), 'orb ice', 300); }, 200);
+  if (location.search.includes('fx')) setTimeout(() => { window.__fxSlow = 12; rain('foe', 'meteor', 7, 170, 480); holyLight('mine'); const sw = b.mine.find(u => u.s === 'S'); banner(sw, '회전베기!'); b.foe.filter(isFront).forEach(t => slash(posOf(t), false, 1.4, '#ffb070')); projectile(posOf(b.mine.find(u => u.s === 'D')), posOf(b.foe[0]), 'orb ice', 300); }, 200);
 }
 if (location.hash === '#chars') showChars();
 if (location.hash === '#relic') newRun();
