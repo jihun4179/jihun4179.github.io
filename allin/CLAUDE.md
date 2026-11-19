@@ -29,3 +29,8 @@
 ## 검증
 
 - 수정 뒤 Playwright 로 1920×1080 스크린샷을 찍어 눈으로 확인하고, 콘솔 오류 0 을 확인한 뒤 보고한다.
+
+## 밸런스 · 연출 (2026-11-19)
+- 숫자는 `index.html` 의 `BAL` 표에 모여 있다. 근거 · 목표 · 측정값은 `docs/BALANCE.md`.
+- 봇 검사: `node tools/sim.mjs 150` (약 15~20분, 끝에 JSON). `BAL='{"press":.12}' node tools/sim.mjs 60` 처럼 값을 덮어써 실험한다.
+- 연출 확인: `node tools/anim-shot.mjs` (데모 전투 프레임) · `node tools/play-shot.mjs` (실제 한 라운드). 둘 다 오류 0 이어야 한다.
