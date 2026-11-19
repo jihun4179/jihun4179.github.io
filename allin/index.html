@@ -360,6 +360,7 @@ button:disabled { opacity: .3; cursor: default; }
 @keyframes usedPulse { 30% { transform: scale(1.05); filter: brightness(1.25); } }
 .table .card.unused, .enemy .card.unused { opacity: .45; }
 .field .result.pop { animation: resultPop .5s cubic-bezier(.3,1.5,.5,1) both; } @keyframes resultPop { from { transform: translateX(-50%) scale(1.8); opacity: 0; } }
+.bac { color: #9fd3ff; font-size: .95em; } .bac.nat { color: #ffd84a; text-shadow: 0 0 10px rgba(255,210,80,.7); }
 @media (prefers-reduced-motion: reduce) { .card.deal, .card.flip, .card.used, .fx-spawn .ubody, .bar.hurt { animation: none; } }
 
 </style>
@@ -631,6 +632,8 @@ const BAL = Object.assign({
   pot: 0,                                      // 쇼다운에서 진 쪽 본체가 판돈 × 이것 만큼 잃는다 (봇 측정: 아무도 안 맞는 라운드가 2%뿐이라 0)
   rig: .2,                                     // 카지노 지배인 · 회장이 공용 카드를 바꿔치기할 확률 (.3 이면 2층 사장에서 34%가 죽었다)
   doubleSummon: 1.3,                           // 회장의 소환 수 배율
+  natural9: 2,                                 // 바카라 내추럴 9: 상대 본체에 판돈 × 이것
+  natural8: 1,                                 // 바카라 내추럴 8: 상대 본체에 판돈 × 이것
   bossHeal: .75,                               // 사장을 이기면 '잃은 체력'의 몇 %를 채우나 (슬더스: 막 사이 75% — 예전 '최대 체력 30%'는 층을 넘을수록 바닥났다)
 }, window.__BAL || {});
 
@@ -799,7 +802,7 @@ function newRound() {
   b.board = []; b.street = 0;
   b.stake = b.table.id === 'stake3' ? 3 : chip('bigStack') ? 2 : 1;
   b.en = b.e.twoHands ? [b.enDeck.pop(), b.enDeck.pop(), b.enDeck.pop()] : [b.enDeck.pop(), b.enDeck.pop()];
-  b.peeked = b.en.map(() => false); b.say = null; b.guard = false; b.bluffBoost = 0; b.result = null; b.summonNote = '';
+  b.peeked = b.en.map(() => false); b.bac = null; b.init = null; b.say = null; b.guard = false; b.bluffBoost = 0; b.result = null; b.summonNote = '';
   // 기술 카드: 첫 라운드 2장, 그 뒤 라운드마다 1장 · 손에 최대 3장 (안 쓴 카드는 다음 라운드로)
   for (let k = b.round === 1 ? 2 : 1; k > 0 && b.hand.length < 3; k--) { if (!b.tdraw.length) b.tdraw = shuffle(run.tricks.slice()); const t = b.tdraw.pop(); if (t) b.hand.push(t); }
   // 손패: 3장(도박사의 눈 4장) 받아 2장 고르기 — 저주는 반드시 들어온다
@@ -968,13 +971,48 @@ function doSummon(side, plan) {
 const planText = p => `${CLASSES[p.s].name} ×${p.n}${(p.extra || []).map(x => ' + ' + CLASSES[x].name).join('')}${p.el ? ` · ${ELEMENTS[p.el].name}` : ''}`;
 const SPECIAL = { 4: ['R'], 6: ['K'], 7: ['G'], 8: ['R', 'G'], 9: ['R', 'K', 'G'] };
 
+// ------------------------------------------------------------ 바카라 (2026-11-19)
+// 손패 두 장을 홀덤 족보로도, 바카라로도 읽는다. 바카라 = 두 장 숫자 합의 끝자리 (A=1, 10 · J · Q · K = 0, 저주 = 0, 조커 = 9가 되게).
+// 홀덤 족보 → 쫄병 수 · 세기 / 바카라 → 기세: 높은 쪽 쫄병이 먼저 움직이고, 8 · 9(내추럴)는 상대 본체에 바로 꽂히고, 같으면(타이) 판돈 두 배.
+const bacVal = c => !c || c.curse || !c.r ? 0 : c.r === 14 ? 1 : c.r >= 10 ? 0 : c.r;
+function bacScore(cards) {
+  const cs = (cards || []).slice(0, 2); if (!cs.length) return 0;
+  if (cs.some(c => c.wild)) return 9;
+  return cs.reduce((a, c) => a + bacVal(c), 0) % 10;
+}
+function enBac() {   // 쌍둥이 딜러(3장)는 가장 좋은 두 장
+  if (!b.e.twoHands) return bacScore(b.en);
+  return Math.max(bacScore([b.en[0], b.en[1]]), bacScore([b.en[0], b.en[2]]), bacScore([b.en[1], b.en[2]]));
+}
+const bacTag = n => n >= 8 ? `<b class="bac nat">바카라 ${n} 내추럴</b>` : `<b class="bac">바카라 ${n}</b>`;
+const natMul = n => n === 9 ? BAL.natural9 : n === 8 ? BAL.natural8 : 0;
+/** 본체 체력바에 바로 꽂히는 피해 (돌격 · 내추럴 공용) */
+function barHit(hitSide, dmg, maxHp, label = '') {
+  if (!dmg || window.__allinFast) return;
+  const bar = hitSide === 'foe' ? $('.enemy .bar') : $('.me .bar'); if (!bar) return;
+  const tp = appPos(bar);
+  bar.classList.remove('hurt'); void bar.offsetWidth; bar.classList.add('hurt');
+  const inner = bar.querySelector('div'), hpNow = hitSide === 'foe' ? b.hp : run.hp; if (inner) inner.style.width = Math.max(0, Math.round(100 * hpNow / maxHp)) + '%';
+  const n = topPiece('num body ' + (hitSide === 'foe' ? '' : 'crit'), tp.x, tp.y - 30, `${label}-${dmg}`);
+  play(n, [{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 }, { offset: .15, transform: 'translate(-50%,-50%) scale(1.4)', opacity: 1 }, { offset: .35, transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }, { offset: .8, opacity: 1 }, { transform: 'translate(-50%, -110%)', opacity: 0 }], 900);
+  const big = dmg >= maxHp * .15;
+  if (big) shakeScreen(hitSide === 'mine' ? 10 : 7);
+  if (hitSide === 'mine' && big) { const v = topPiece('vignette', 0, 0); play(v, [{ opacity: 0 }, { offset: .2, opacity: 1 }, { opacity: 0 }], 600); }
+}
+
 async function showdown() {
   b.phase = 'show'; b.reveal = b.peeked.some(p => !p); b.peeked = b.peeked.map(() => true); b.hidden = -1;
   const me = myBest(), en = enBest();
   const win = me.score > en.score ? true : en.score > me.score ? false : null;
+  // 바카라: 기세 · 타이(판돈 두 배)는 소환 전에, 내추럴은 소환 직후 본체에
+  const bm = bacScore(b.my), be = enBac();
+  b.init = bm > be ? 'mine' : be > bm ? 'foe' : null;
+  const tie = bm === be; if (tie) b.stake = Math.min(maxStake(), b.stake * 2);
+  b.bac = { me: bm, en: be, tie };
   const pm = summonPlan('mine', me, win), pf = summonPlan('foe', en, win === null ? null : !win);
   b.result = { me, en, win };
   let msg = win === true ? `승리! ${me.name}` : win === false ? `패배… 상대 ${en.name}` : '무승부';
+  msg += ` · 바카라 ${bm} : ${be}${tie ? ` 타이! 판돈 ${b.stake}` : bm > be ? ' 내 기세' : ' 적 기세'}`;
   if (win === true && b.energy < b.maxE) { b.energy++; msg += ' · 에너지 +1'; }
   if (win === true && run.relic && RELICS[run.relic].lv && RELICS[run.relic].cats.includes(me.cat)) {
     const vers = relic('versatile'); if (!vers || !run.wonCats.includes(me.cat)) { run.relicLv = (run.relicLv || 0) + 1; msg += ` · ✦ ${RELICS[run.relic].name} Lv.${run.relicLv}!`; b.lvUp = true; }
@@ -988,7 +1026,18 @@ async function showdown() {
   log(msg);
   doSummon('mine', pm); doSummon('foe', pf);
   b.summonNote = `소환 — 나: ${planText(pm)}  ·  적: ${planText(pf)}`;
-  renderBattle(); await sleep(b.fast ? 300 : 1100);
+  if (be >= 8) say(`내추럴 ${be}!`, 'raise');
+  renderBattle(); await sleep(b.fast ? 300 : 700);
+  const toFoeN = Math.round(natMul(bm) * b.stake), toMeN = Math.round(natMul(be) * b.stake);
+  if (toFoeN || toMeN) {
+    if (toFoeN) { b.hp = Math.max(0, b.hp - toFoeN); log(`내추럴 ${bm}! 적 본체 −${toFoeN}`); barHit('foe', toFoeN, b.maxHp, '내추럴 '); }
+    if (toMeN) { run.hp = Math.max(0, run.hp - toMeN); log(`적 내추럴 ${be}! 내 본체 −${toMeN}`); barHit('mine', toMeN, run.maxHp, '내추럴 '); }
+    (window.__trace = window.__trace || []).push(`${b.e.name} R${b.round} natural ${bm}:${be} natFoe${toFoeN} natMe${toMeN}`);
+    await sleep(b.fast ? 100 : 700);
+    if (run.hp <= 0) return showEnd(false);
+    if (b.hp <= 0) return winBattle();
+  }
+  await sleep(b.fast ? 0 : 400);
   await fight();
 }
 async function foldBy(who) {
@@ -1201,13 +1250,7 @@ async function chargeFx(hitSide, dmg, maxHp) {
     ps.push(play(s, [{ transform: `translate(-100%,-50%) rotate(${ang}deg) scaleX(.3)`, opacity: 0 }, { offset: .15, opacity: 1 }, { transform: `translate(calc(-100% + ${tp.x - a.x}px), calc(-50% + ${tp.y - a.y}px)) rotate(${ang}deg) scaleX(1.4)`, opacity: 1 }], 300, { ease: 'cubic-bezier(.5,0,.9,.6)', delay: 90 + i * 45 }));
   });
   await Promise.all(ps);
-  bar.classList.remove('hurt'); void bar.offsetWidth; bar.classList.add('hurt');
-  const inner = bar.querySelector('div'), hpNow = hitSide === 'foe' ? b.hp : run.hp; if (inner) inner.style.width = Math.max(0, Math.round(100 * hpNow / maxHp)) + '%';
-  const n = topPiece('num body ' + (hitSide === 'foe' ? '' : 'crit'), tp.x, tp.y - 30, `-${dmg}`);
-  play(n, [{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 }, { offset: .15, transform: 'translate(-50%,-50%) scale(1.4)', opacity: 1 }, { offset: .35, transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }, { offset: .8, opacity: 1 }, { transform: 'translate(-50%, -110%)', opacity: 0 }], 900);
-  const big = dmg >= maxHp * .15;
-  if (big) shakeScreen(hitSide === 'mine' ? 10 : 7);
-  if (hitSide === 'mine' && big) { const v = topPiece('vignette', 0, 0); play(v, [{ opacity: 0 }, { offset: .2, opacity: 1 }, { opacity: 0 }], 600); }
+  barHit(hitSide, dmg, maxHp);
 }
 function glowUnit(u, color, ms = 380) {   // 기 모으기: 빛나며 살짝 부풀었다가 (짧으면 원거리 공격의 예비 동작)
   const el = $(`.field [data-u="${u.id}"] .ubody`); if (!el) return Promise.resolve();
@@ -1303,7 +1346,8 @@ async function fight() {
     if (tick === 4) flash('과열! 피해가 점점 커진다');
     // 한 턴: 양쪽이 거의 동시에 움직인다 (엇갈려 출발) → 끝난 뒤 한 번에 정리
     const order = []; const L = Math.max(b.mine.length, b.foe.length);
-    for (let i = 0; i < L; i++) { if (b.mine[i]) order.push(b.mine[i]); if (b.foe[i]) order.push(b.foe[i]); }
+    const [A, B] = b.init === 'foe' ? [b.foe, b.mine] : [b.mine, b.foe];   // 바카라 기세: 높은 쪽이 매 턴 먼저 움직인다
+    for (let i = 0; i < L; i++) { if (A[i]) order.push(A[i]); if (B[i]) order.push(B[i]); }
     const gap = b.fast ? 25 : 42;
     await Promise.all(order.map((u, i) => sleep(i * gap).then(() => act(u, elemMul)).then(() => syncField())));
     await sleep(b.fast ? 40 : 110);   // 마지막 타격의 멈칫 · 밀림이 끝날 때까지
@@ -1373,7 +1417,7 @@ function renderField() { const f = $('.field .units-wrap'); if (f) f.innerHTML =
 function previewText() {
   if (!b.my.length) return '';
   const h = myBest(), p = summonPlan('mine', h, undefined);
-  return `<b>${h.name}</b> → ${planText(p)}`;
+  return `<b>${h.name}</b> → ${planText(p)} · ${bacTag(bacScore(b.my))}`;
 }
 function renderBattle() {
   const hpPct = Math.round(100 * b.hp / b.maxHp), myPct = Math.round(100 * run.hp / run.maxHp);
@@ -1388,7 +1432,7 @@ function renderBattle() {
   const myCards = picking
     ? b.offered.map(c => cardHtml(c, { cls: `big pickcard ${b.sel.has(c.id) ? 'sel' : ''}` }).replace('class="card', `data-id="${c.id}" class="card`)).join('')
     : b.my.map((c, i) => cardHtml(c, { cls: 'big' + useCls(c), back: i === b.hidden })).join('');
-  const res = b.result ? `<div class="result ${b.result.win ? 'win' : b.result.win === false ? 'lose' : ''} ${b.reveal ? 'pop' : ''}">나: ${b.result.me.name} · 적: ${b.result.en.name}</div>` : '';
+  const res = b.result ? `<div class="result ${b.result.win ? 'win' : b.result.win === false ? 'lose' : ''} ${b.reveal ? 'pop' : ''}">나: ${b.result.me.name}${b.bac ? ` · ${bacTag(b.bac.me)}` : ''} &nbsp;|&nbsp; 적: ${b.result.en.name}${b.bac ? ` · ${bacTag(b.bac.en)}` : ''}${b.bac && b.bac.tie ? ' · <b class="bac nat">타이! 판돈 ×2</b>' : ''}</div>` : '';
   const busy = b.phase === 'fight' || b.phase === 'show' || b.phase === 'busy';
   $('#app').innerHTML = `${header(false)}<div class="battle">
   <div class="side">${run.relic ? `<div class="relictag" title="${RELICS[run.relic].text}">✦ ${RELICS[run.relic].name}${RELICS[run.relic].lv ? ` <b>Lv.${run.relicLv || 0}</b>` : ''}<i>${RELICS[run.relic].text}${RELICS[run.relic].lv ? ` · Lv당 ${RELICS[run.relic].lv}` : ''}</i></div>` : ''}<h3>칩 슬롯</h3><div class="slotlist">${slots.join('')}</div>
@@ -1405,7 +1449,7 @@ function renderBattle() {
     <div class="bottom">
     <div class="me">
       <div class="cards">${myCards}</div>
-      <div class="info">${picking ? `<div class="now pickhint">카드 <b>2장</b>을 눌러 고르세요 (${b.sel.size}/2) <span class="muted">${b.offered.some(c => c.curse) ? '저주는 못 빼요' : ''}</span></div>`
+      <div class="info">${picking ? `<div class="now pickhint">카드 <b>2장</b>을 눌러 고르세요 (${b.sel.size}/2)${b.sel.size === 2 ? ' · ' + bacTag(bacScore(b.offered.filter(c => b.sel.has(c.id)))) : ''} <span class="muted">${b.offered.some(c => c.curse) ? '저주는 못 빼요' : ''}</span></div>`
         : `<div class="now">${previewText()}</div>`}
         <div class="bar mine"><div style="width:${myPct}%"></div><span>내 체력 ${run.hp} / ${run.maxHp}</span></div></div>
     </div>
@@ -1584,7 +1628,7 @@ function showEnd(win) {
 function showTitle() {
   $('#app').innerHTML = `<div class="title"><h1>ALL IN</h1><p class="sub">올인 던전</p>
     <p>적과 같은 판을 두고 홀덤을 친다.<br>내 족보가 쫄병 군대를 불러내고, 쫄병끼리 싸운다.</p>
-    <ul class="how"><li>3장 받아 <b>2장 고르기</b> → 체크 · 레이즈 · 폴드</li><li>족보 카드에 <b>가장 많은 무늬</b>가 직업 (♠검사 딜 · ♣기사 탱 · ♥성직자 힐 · ♦마법사 광역)</li><li>족보가 클수록 많이 · 세게 소환, 이기면 <b>판돈만큼</b> 더 강해짐</li><li>스트레이트 → <b>도적</b> · 풀하우스 → <b>대장</b> · 포카드 → <b>골렘</b> 특수 유닛</li><li>상대 진영을 비우면 남은 쫄병이 <b>본체</b>를 친다</li></ul>
+    <ul class="how"><li>3장 받아 <b>2장 고르기</b> → 체크 · 레이즈 · 폴드</li><li>족보 카드에 <b>가장 많은 무늬</b>가 직업 (♠검사 딜 · ♣기사 탱 · ♥성직자 힐 · ♦마법사 광역)</li><li>족보가 클수록 많이 · 세게 소환, 이기면 <b>판돈만큼</b> 더 강해짐</li><li>스트레이트 → <b>도적</b> · 풀하우스 → <b>대장</b> · 포카드 → <b>골렘</b> 특수 유닛</li><li>같은 두 장은 <b>바카라</b>로도 읽는다: 합의 끝자리가 높은 쪽이 먼저 움직이고, <b>8 · 9</b>는 상대 본체에 바로 꽂힌다 · 같으면 판돈 두 배</li><li>상대 진영을 비우면 남은 쫄병이 <b>본체</b>를 친다</li></ul>
     <button id="start" class="primary">시작</button></div>`;
   $('#start').onclick = showChars;
 }

@@ -40,7 +40,7 @@ const BOT = async (RUNS) => {
       const a = opts[i], c = opts[j]; const curses = opts.filter(x => x.curse).map(x => x.id);
       if (curses.length && !curses.every(id => id === a.id || id === c.id)) continue;
       const pc = [a, c].filter(x => !x.curse); let s = pc.reduce((t, x) => t + x.r, 0);
-      if (pc.length === 2 && pc[0].r === pc[1].r) s += 30; if (pc.length === 2 && pc[0].s === pc[1].s) s += 8; if (pc.length === 2 && Math.abs(pc[0].r - pc[1].r) <= 2) s += 4; if (pc.some(x => x.wild)) s += 40;
+      if (pc.length === 2 && pc[0].r === pc[1].r) s += 30; if (pc.length === 2 && pc[0].s === pc[1].s) s += 8; if (pc.length === 2 && Math.abs(pc[0].r - pc[1].r) <= 2) s += 4; if (pc.some(x => x.wild)) s += 40; const bs2 = bacScore([a, c]); if (bs2 === 9) s += 10; else if (bs2 === 8) s += 7;
       if (s > bs) { bs = s; bestPair = [a.id, c.id]; }
     }
     b.sel = new Set(bestPair); confirmPick();
@@ -95,8 +95,9 @@ const BOT = async (RUNS) => {
   const num = (l, k) => +((l.match(new RegExp(k + '(\\d+)')) || [0, 0])[1]);
   const fl = tr.filter(l => l.includes(' toFoe')); S.toMe = fl.reduce((a, l) => a + num(l, 'toMe'), 0); S.toFoe = fl.reduce((a, l) => a + num(l, 'toFoe'), 0);
   S.sdW = fl.filter(l => / W:/.test(l)).length; S.sdL = fl.filter(l => / L:/.test(l)).length;
+  S.natFoe = tr.reduce((a, l) => a + num(l, 'natFoe'), 0); S.natMe = tr.reduce((a, l) => a + num(l, 'natMe'), 0);
   S.foldMeDmg = tr.filter(l => l.includes('fold-me')).reduce((a, l) => a + num(l, 'stake') + BAL.foldBase, 0);
-  return { toMe: S.toMe, toFoe: S.toFoe, sdW: S.sdW, sdL: S.sdL, foldMeDmg: S.foldMeDmg, zero: S.zero, fightRounds: S.fightRounds, long: S.long, runs: S.runs, wins: S.wins, deathAt: S.deathAt, fights: S.fights, cats: S.cats, enCats: S.enCats, folds: S.folds };
+  return { natFoe: S.natFoe, natMe: S.natMe, toMe: S.toMe, toFoe: S.toFoe, sdW: S.sdW, sdL: S.sdL, foldMeDmg: S.foldMeDmg, zero: S.zero, fightRounds: S.fightRounds, long: S.long, runs: S.runs, wins: S.wins, deathAt: S.deathAt, fights: S.fights, cats: S.cats, enCats: S.enCats, folds: S.folds };
 };
 
 const PAR = +(process.env.PAR || 4);
@@ -110,12 +111,12 @@ const parts = await Promise.all(Array.from({ length: PAR }, async (_, i) => {
   return page.evaluate(BOT, Math.ceil(RUNS / PAR));
 }));
 // 합치기
-const out = { toMe: 0, toFoe: 0, sdW: 0, sdL: 0, foldMeDmg: 0, zero: 0, fightRounds: 0, long: 0, runs: 0, wins: 0, deathAt: {}, fights: [], cats: Array(10).fill(0), enCats: Array(10).fill(0), folds: { me: 0, en: 0 } };
-for (const p of parts) { for (const k of ['toMe', 'toFoe', 'sdW', 'sdL', 'foldMeDmg']) out[k] += p[k]; out.zero += p.zero; out.fightRounds += p.fightRounds; out.long += p.long; out.runs += p.runs; out.wins += p.wins; for (const k in p.deathAt) out.deathAt[k] = (out.deathAt[k] || 0) + p.deathAt[k]; out.fights.push(...p.fights); p.cats.forEach((c, i) => out.cats[i] += c); p.enCats.forEach((c, i) => out.enCats[i] += c); out.folds.me += p.folds.me; out.folds.en += p.folds.en; }
+const out = { natFoe: 0, natMe: 0, toMe: 0, toFoe: 0, sdW: 0, sdL: 0, foldMeDmg: 0, zero: 0, fightRounds: 0, long: 0, runs: 0, wins: 0, deathAt: {}, fights: [], cats: Array(10).fill(0), enCats: Array(10).fill(0), folds: { me: 0, en: 0 } };
+for (const p of parts) { for (const k of ['natFoe', 'natMe', 'toMe', 'toFoe', 'sdW', 'sdL', 'foldMeDmg']) out[k] += p[k]; out.zero += p.zero; out.fightRounds += p.fightRounds; out.long += p.long; out.runs += p.runs; out.wins += p.wins; for (const k in p.deathAt) out.deathAt[k] = (out.deathAt[k] || 0) + p.deathAt[k]; out.fights.push(...p.fights); p.cats.forEach((c, i) => out.cats[i] += c); p.enCats.forEach((c, i) => out.enCats[i] += c); out.folds.me += p.folds.me; out.folds.en += p.folds.en; }
 const by = {}; for (const f of out.fights) { const k = `${f.floor}-${f.type}`; (by[k] = by[k] || { n: 0, lost: 0, rounds: 0, die: 0 }); by[k].n++; by[k].lost += f.lost; by[k].rounds += f.rounds; if (!f.won) by[k].die++; }
 for (const k in by) { by[k].lost = +(by[k].lost / by[k].n).toFixed(1); by[k].rounds = +(by[k].rounds / by[k].n).toFixed(1); by[k].diePct = +(by[k].die / by[k].n * 100).toFixed(1); }
 const tot = out.cats.reduce((a, c) => a + c, 0);
 const pct = a => a.map(c => +(c / tot * 100).toFixed(1));
-console.log(JSON.stringify({ perFightRound: { toMe: +(out.toMe / out.fightRounds).toFixed(2), toFoe: +(out.toFoe / out.fightRounds).toFixed(2), showdownWinPct: +(out.sdW / (out.sdW + out.sdL) * 100).toFixed(1) }, foldDmgPerRun: +(out.foldMeDmg / out.runs).toFixed(1), zeroDamageRounds: +(out.zero / out.fightRounds * 100).toFixed(1), fightsOver15Rounds: out.long, runs: out.runs, winRate: +(out.wins / out.runs * 100).toFixed(1), deathAt: out.deathAt, byFloorType: by, myHands: pct(out.cats), enHands: pct(out.enCats), folds: out.folds, seconds: Math.round((Date.now() - t0) / 1000), errors: errs.slice(0, 5) }, null, 1));
+console.log(JSON.stringify({ perFightRound: { toMe: +(out.toMe / out.fightRounds).toFixed(2), toFoe: +(out.toFoe / out.fightRounds).toFixed(2), showdownWinPct: +(out.sdW / (out.sdW + out.sdL) * 100).toFixed(1) }, foldDmgPerRun: +(out.foldMeDmg / out.runs).toFixed(1), naturalPerFightRound: { toFoe: +(out.natFoe / out.fightRounds).toFixed(2), toMe: +(out.natMe / out.fightRounds).toFixed(2) }, zeroDamageRounds: +(out.zero / out.fightRounds * 100).toFixed(1), fightsOver15Rounds: out.long, runs: out.runs, winRate: +(out.wins / out.runs * 100).toFixed(1), deathAt: out.deathAt, byFloorType: by, myHands: pct(out.cats), enHands: pct(out.enCats), folds: out.folds, seconds: Math.round((Date.now() - t0) / 1000), errors: errs.slice(0, 5) }, null, 1));
 await browser.close();
 try { fs.unlinkSync(tmp); } catch {}
