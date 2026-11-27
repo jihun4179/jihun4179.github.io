@@ -70,6 +70,8 @@
   <ul>
     <li>회원가입이 없습니다. 이름·이메일·전화번호·주소를 묻지 않습니다.</li>
     <li>게임 진행 상황은 기기 안에 저장됩니다. 게임을 개선하기 위해 <strong>판이 끝날 때 익명의 플레이 기록</strong>(이름·연락처 없음)을 개발자의 기록 저장소로 보냅니다. 아래 2항에 자세히 적었습니다.</li>
+    <li>이용자가 정한 <strong>닉네임</strong>은 순위표와 2인 온라인 레이드에서 <strong>다른 이용자에게 보입니다.</strong></li>
+    <li><strong>2인 온라인 레이드</strong>를 할 때는 두 기기를 연결하기 위해 Photon(Exit Games) 서버를 거칩니다(3항 다.).</li>
     <li>다만 <strong>광고</strong>와 <strong>결제</strong> 두 기능은 외부 서비스를 쓰며, 그 서비스가 자체적으로 정보를 처리합니다. 아래에 자세히 적었습니다.</li>
     <li>광고는 <strong>보상형 광고뿐</strong>이며, 이용자가 버튼을 눌러 직접 선택했을 때만 재생됩니다. 배너나 전면 광고는 없습니다.</li>
   </ul>
@@ -81,7 +83,29 @@
 <tr><th>항목</th><td>앱이 무작위로 만든 유저 코드(예: AD-7K3F9Q, 설정 화면에 표시) · 플랫폼(Android/iOS) · 앱 버전 · 플레이한 알바 · 버틴 시간 · 처치 수 · 레벨 · 보유 무기와 레벨 · 고른 강화 카드 · 진상 손님 처치 · 각성 수 · 누적 판 수 · 누적 플레이 시간 · 보유 코인과 다이아 · 광고 제거 여부 · 최고 기록 갱신 여부 · 기록 시각</td></tr>
 <tr><th>목적</th><td>난이도 · 밸런스 조정, 오류 확인, 이용자 문의(보상 · 오류) 처리</td></tr>
 <tr><th>수집하지 않음</th><td>이름 · 이메일 · 전화번호 · 광고 식별자 · 기기 고유 번호 · 위치. 유저 코드는 앱이 만든 무작위 글자로, 이용자가 직접 알려 주지 않는 한 누구인지 알 수 없습니다.</td></tr>
-<tr><th>보관</th><td>최대 2년 보관 후 삭제합니다. 앱 안에서 다른 이용자의 기록을 볼 수는 없습니다.</td></tr>
+<tr><th>보관</th><td>최대 2년 보관 후 삭제합니다. 이 익명 플레이 기록은 다른 이용자에게 보이지 않습니다.</td></tr>
+</table></div>
+
+<h3>닉네임 · 순위표 (다른 이용자에게 보임)</h3>
+<div class="card"><table>
+<tr><th>항목</th><td>이용자가 정한 닉네임(2~8자, 중복 확인을 위해 서버에 등록) · 유저 코드 · 플레이한 알바 · 최고 기록(버틴 시간 / 레이드 처치 시간) · 착용한 옷 · 2인 레이드면 함께한 동료의 닉네임과 알바</td></tr>
+<tr><th>목적</th><td>닉네임 중복 방지, 앱 안의 순위표 · 시상대 표시</td></tr>
+<tr><th>공개 범위</th><td><strong>닉네임 · 기록 · 알바 · 옷은 앱 안 순위표에서 모든 이용자에게 보입니다.</strong> 유저 코드는 보이지 않습니다.</td></tr>
+<tr><th>보관</th><td>순위표는 시즌(약 15일)마다 새로 시작하고, 지난 시즌 기록은 최대 2년 보관 후 삭제합니다. 닉네임은 이용자가 바꾸거나 삭제를 요청할 때까지 보관합니다.</td></tr>
+</table></div>
+
+<h3>기록 백업 · 복구 (클라우드 저장)</h3>
+<div class="card"><table>
+<tr><th>항목</th><td>게임 저장 내용 전체(진행 상황 · 보유 재화 · 옷 · 설정) · 유저 코드 · 앱이 만든 6자리 복구 번호</td></tr>
+<tr><th>목적</th><td>앱을 지웠다 다시 설치하거나 기기를 바꿨을 때 이용자가 유저 코드와 복구 번호로 기록을 되살리기 위함</td></tr>
+<tr><th>보관</th><td>마지막 백업 후 2년이 지나면 삭제합니다. 그 전에 지우고 싶으면 유저 코드를 아래 연락처로 보내 주세요.</td></tr>
+</table></div>
+
+<h3>친구 초대</h3>
+<div class="card"><table>
+<tr><th>항목</th><td>초대 코드 · 보상 확인용 기기 값(Android 기기 고유값 / iOS 키체인에 둔 무작위 값)을 <strong>SHA-256 으로 변환한 값만</strong> 보냅니다(원래 값은 서버로 가지 않음) · 초대한 사람과 받은 사람의 닉네임</td></tr>
+<tr><th>목적</th><td>한 기기가 초대 보상을 여러 번 받는 부정 이용 방지</td></tr>
+<tr><th>보관</th><td>초대 보상 확인에 필요한 동안 보관하며, 최대 2년 후 삭제합니다.</td></tr>
 </table></div>
 
 <h2>3. 외부 서비스가 처리하는 정보</h2>
@@ -114,13 +138,25 @@
   <li>RevenueCat의 처리 내용: <a href="https://www.revenuecat.com/privacy" target="_blank" rel="noopener">RevenueCat Privacy Policy</a></li>
 </ul>
 
+<h3>다. 2인 온라인 레이드 — Photon (Exit Games)</h3>
+<table>
+  <tr><th>처리 주체</th><td>Exit Games GmbH (Photon Fusion, 실시간 대전 연결 서버)</td></tr>
+  <tr><th>목적</th><td>같이 할 상대 찾기, 두 기기 사이 게임 화면 맞추기(캐릭터 위치 · 고른 무기 · 피해 · 진상 체력 등)</td></tr>
+  <tr><th>처리 항목</th><td>접속 IP 주소 · 앱이 연결할 때마다 만드는 임시 접속 ID · 닉네임 · 플레이하는 알바 · 판 진행 데이터. 상대에게는 닉네임 · 알바 · 캐릭터 움직임이 보입니다. 채팅 기능은 없습니다.</td></tr>
+  <tr><th>보관</th><td>판이 끝나면 연결이 끊기며, 개발자는 이 연결 데이터를 따로 저장하지 않습니다. Photon 의 서버 기록은 Exit Games 의 정책에 따릅니다.</td></tr>
+</table>
+<ul>
+  <li>2인 온라인 레이드는 이용자가 레이드에서 상대 찾기를 눌렀을 때만 연결됩니다. 혼자 하는 판에서는 Photon 에 연결하지 않습니다.</li>
+  <li>Photon 의 처리 내용: <a href="https://www.photonengine.com/privacy" target="_blank" rel="noopener">Photon Privacy Policy</a></li>
+</ul>
+
 <h2>4. 수집하지 않는 정보</h2>
 <p>앱은 GPS 등 기기의 정밀한 위치를 요청하거나 수집하지 않으며, 위치 권한도 묻지 않습니다. 다만 위 3항 가.의 Google AdMob 은 광고 요청에 포함된 IP 주소로 국가·도시 수준의 대략적인 지역을 추정해 광고 게재와 동의 절차 적용에 사용할 수 있습니다.</p>
 <p>연락처, 사진·동영상, 마이크, 건강 정보, 금융 정보는 수집하지 않습니다.</p>
 <p>개발자는 별도의 분석(애널리틱스) SDK 나 크래시 리포트 SDK 를 넣지 않았으며(위 2항의 익명 플레이 기록만 직접 받습니다), 충돌 기록을 직접 받지 않습니다. 다만 위 3항 가.의 Google AdMob SDK 는 자체 오류 확인과 성능 개선을 위해 충돌 기록, 광고 로딩 성능 등 진단 정보를 처리할 수 있습니다.</p>
 
 <h2>5. 제3자 제공 및 판매</h2>
-<p>개발자는 이용자의 정보를 제3자에게 판매하거나 마케팅 목적으로 제공하지 않습니다. 위 3항의 광고·결제 서비스는 해당 기능을 제공하기 위해 필요한 범위에서만 정보를 처리합니다.</p>
+<p>개발자는 이용자의 정보를 제3자에게 판매하거나 마케팅 목적으로 제공하지 않습니다. 위 3항의 광고 · 결제 · 온라인 대전 서비스는 해당 기능을 제공하기 위해 필요한 범위에서만 정보를 처리합니다. 위 2항의 기록은 Supabase(데이터베이스 호스팅)에 저장됩니다.</p>
 
 <h2>6. 보관 기간 및 삭제</h2>
 <ul>
@@ -133,7 +169,7 @@
 <p>이 앱은 아동을 주 대상으로 하지 않으며, 만 13세 미만 아동을 겨냥해 광고하지 않습니다. 보호자의 지도 아래 이용하는 것을 권장하며, 아동의 정보와 관련해 우려되는 사항이 있으면 아래 연락처로 문의해 주세요.</p>
 
 <h2>8. 보안</h2>
-<p>앱과 외부 서비스 사이의 통신은 모두 암호화된 연결(HTTPS)로 이루어집니다.</p>
+<p>앱과 외부 서비스 사이의 통신은 암호화된 연결(HTTPS 등)로 이루어집니다.</p>
 
 <h2>9. 처리방침 변경</h2>
 <p>이 방침이 바뀌면 이 페이지에 새 시행일자와 함께 업데이트합니다. 별도의 통지 채널(이메일 등)은 운영하지 않습니다.</p>
@@ -146,8 +182,14 @@
   <p>This policy applies to <strong>Alba Defense</strong> (<code>com.jihun.albadefense</code>) only.</p>
 
   <h3>What the app collects</h3>
-  <p>Nothing. There is no sign-up, and no name, e-mail address, or phone number is requested.
+  <p>There is no sign-up, and no name, e-mail address, or phone number is requested.
   Game progress is stored in local app storage on the device. From version 0.4.86 (Android) / 1.6.3 (iOS), when a run ends the app sends one anonymous play record to the developer's database (hosted on Supabase): a random player code generated by the app (shown in Settings), platform, app version, job played, survival time, kills, level, weapons and their levels, upgrade cards picked, boss kills, awakenings, total runs and play time, coins and gems, ad-free status and whether a best time was set. It is used to tune difficulty and balance, find bugs and handle support requests. No name, email, phone number, advertising ID, device identifier or location is included. Records are deleted after at most 2 years; email your player code to delete them sooner.</p>
+
+  <h3>Nickname, leaderboards, backup and invites</h3>
+  <p><strong>Nickname &amp; leaderboards:</strong> the nickname you choose (2–8 characters) is registered on the server to prevent duplicates. Your nickname, best times (survival / raid clear), job played, worn outfit and, for 2-player raids, your partner's nickname and job are shown to <strong>all players</strong> on the in-app leaderboards. Your player code is not shown. Seasons reset about every 15 days; past records are deleted after at most 2 years.</p>
+  <p><strong>Cloud backup:</strong> the full save (progress, currencies, outfits, settings), your player code and a 6-digit recovery number are stored so you can restore your progress after reinstalling or changing devices. Deleted 2 years after the last backup, or sooner on request.</p>
+  <p><strong>Friend invites:</strong> invite codes, the nicknames of inviter and invitee, and a SHA-256 hash of a device value (Android device ID / a random value kept in the iOS keychain — the original value never leaves the device) are used to prevent invite-reward abuse. Deleted after at most 2 years.</p>
+  <p>These records are stored on Supabase (database hosting).</p>
 
   <h3>Third-party services</h3>
   <p><strong>Google AdMob</strong> serves rewarded ads. Ads play only when the player taps a reward button; there are no banner or interstitial ads.
@@ -159,6 +201,8 @@
   <p><strong>RevenueCat</strong> validates in-app purchases and manages delivery of purchased gems. It processes an anonymous app user ID it generates, store receipts issued by the App Store or Google Play, product identifiers, purchase and refund timestamps, device model, and app version.
   Payment itself is handled by Apple or Google; payment card details never reach the app or the developer.
   See the <a href="https://www.revenuecat.com/privacy" target="_blank" rel="noopener">RevenueCat Privacy Policy</a>.</p>
+
+  <p><strong>Photon (Exit Games GmbH)</strong> connects the two devices in a 2-player online raid, only when you start matchmaking in the raid. It processes your IP address, a temporary connection ID, nickname, job and match data (positions, weapons, damage, boss health). Your partner sees your nickname, job and movements. There is no chat. The developer does not store this connection data. See the <a href="https://www.photonengine.com/privacy" target="_blank" rel="noopener">Photon Privacy Policy</a>.</p>
 
   <h3>Not collected</h3>
   <p>The app does not request or collect precise (GPS) location and never asks for location permission. Google AdMob may estimate a coarse, city-level region from the IP address of ad requests to serve ads and apply consent requirements.</p>
@@ -178,7 +222,7 @@
 
 <footer>
   개발자 연락처: jihun5968@naver.com<br>
-  시행일자: 2026년 10월 25일 (익명 플레이 기록 추가)
+  시행일자: 2026년 11월 27일 (닉네임 · 순위표 · 기록 백업 · 친구 초대 · 2인 온라인 레이드(Photon) 추가) · 이전 개정 2026년 10월 25일
 </footer>
 
 </div>
